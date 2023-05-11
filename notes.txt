@@ -1,0 +1,37 @@
+PROGRAM STRUCTURE {
+  assign x = 3;
+  assign s = "hello";
+  funct foo() { write("bar"); };
+}
+ERRORS {
+  Format:
+    -RED- gscript entry: (Line <l>): 
+    -YELLOW- <errorcode>: <description>
+  Codes:
+    GS101 - Unexpected token %s (of type %d)
+    GS102 - Unsupported character %s
+    GS103 - Failed reading from entry input stream
+    GS104 - Expected '=' after '!'
+    GS201 - Uncaught statement of type %d
+    GS301 - Undefined identifier %s
+    GS501 - No arguments provided where needed
+    GS502 - Function <name> does not take %d arguments
+    GS503 - Undefined function %s
+    GS504 - Illegal argument to function %s
+    GS601 - Dividing by zero is illegal
+    GS602 - Invalid syntax for a number
+}
+SUPPORTED FEATURES {
+  Basic strings
+  Basic math
+  Variables (janky)
+  Functions (very janky)
+}
+STANDARD LIBRARY FUNCTIONS {
+  write(args...) - Writes to stdout
+  read(arg<str>) - Prompts arg and reads user input
+  toupper(arg<str) - Returns arg as uppercase
+  tolower(arg<str>) - Returns arg as lowercase
+  randnum() - Returns a random number
+  num(arg<str>) Returns arg as a double
+}
