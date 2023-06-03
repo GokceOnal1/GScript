@@ -26,7 +26,14 @@ AST *parser_parse_variable(Parser *parser, Scope *scope);
 AST *parser_parse_string(Parser *parser, Scope *scope);
 AST *parser_parse_id(Parser *parser, Scope *scope);
 AST *parser_parse_num(Parser *parser, Scope *scope);
+AST *parser_parse_var_reassign(Parser *parser, Scope *scope);
 AST *parser_parse_variable_definition(Parser *parser, Scope *scope);
 AST *parser_parse_function_definition(Parser *parser, Scope *scope);
+AST *parser_parse_if_statement(Parser *parser, Scope *scope);
+AST *parser_parse_repeat_statement(Parser *parser, Scope *scope);
+AST *parser_parse_leave_statement(Parser *parser, Scope *scope);
+AST *parser_parse_return_statement(Parser *parser, Scope *scope);
+AST *parser_parse_while_statement(Parser *parser, Scope *scope);
+AST *parser_parse_function_param(Parser *parser, Scope *scope);
 
 #endif

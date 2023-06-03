@@ -1,4 +1,4 @@
-PROGRAM STRUCTURE {
+gPROGRAM STRUCTURE {
   assign x = 3;
   assign s = "hello";
   funct foo() { write("bar"); };
@@ -12,20 +12,33 @@ ERRORS {
     GS102 - Unsupported character %s
     GS103 - Failed reading from entry input stream
     GS104 - Expected '=' after '!'
+    GS105 - Unrelated "elsif" caught
+    GS106 - Unrelated "else" caught
     GS201 - Uncaught statement of type %d
     GS301 - Undefined identifier %s
+    GS302 - Variable '%s' already exists in the current scope
+    GS303 - Variable '%s' does not exist in the current scope
     GS501 - No arguments provided where needed
-    GS502 - Function <name> does not take %d arguments
-    GS503 - Undefined function %s
+    GS502 - Function '%s' does not take %d arguments
+    GS503 - Function '%s' does not exist in the current scope
     GS504 - Illegal argument to function %s
+    GS505 - Function '%s' already exists in the current scope
+    GS506 - Expected keyword "param" at function definition
     GS601 - Dividing by zero is illegal
     GS602 - Invalid syntax for a number
+    GS603 - Operator '+' only supports num+num or str+str
 }
 SUPPORTED FEATURES {
   Basic strings
-  Basic math
-  Variables (janky)
-  Functions (very janky)
+  Math expressions
+  Conditional expressions
+  Variables 
+  If statements 
+  Functions (questionable)
+  Leave statements
+  Return statements
+  While loops
+  Repeat loops
 }
 STANDARD LIBRARY FUNCTIONS {
   write(args...) - Writes to stdout

@@ -21,6 +21,6 @@ char* get_file_data(const char* filepath) {
 		fclose(file);
 		return buffer;
 	}
-	_GSERR(0, "GS103 Failed reading of entry input stream");
+	_GSERR(0, "GS103 - Failed reading of entry input stream");
 	exit(2);
 }
