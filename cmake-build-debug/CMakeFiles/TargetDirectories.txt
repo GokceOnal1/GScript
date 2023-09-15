@@ -1,0 +1,3 @@
+C:/Users/obona/CLionProjects/GScript2/cmake-build-debug/CMakeFiles/GScript2.dir
+C:/Users/obona/CLionProjects/GScript2/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/obona/CLionProjects/GScript2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
