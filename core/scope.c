@@ -92,12 +92,9 @@ void scope_set_var(Scope *scope, AST *newdef) {
         }
         scope = scope->parent;
     }
-    char d[200];
-    sprintf(d, "GS303 - Variable '%s' does not exist in the current scope",
-            newdef->var_def_var_name);
-    _GSERR(newdef->line, d);
+    _GSERR_s(scope->e, newdef->line, "GS303 - Variable '%s' does not exist in the current scope",
+             newdef->var_def_var_name);
 }
-
 void scope_clear_defs(Scope* scope) {
     scope->func_defs = NULL;
     scope->func_defs_size = 0;

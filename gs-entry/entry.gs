@@ -1,3 +1,11 @@
-assign list = [10, 20, 30, [40, 50]];
+$ import all from _common $
+$ import all from "common.gs" $
 
-write([10]);
+obj a = {
+    field b = 10;
+    field c = "ok buddy";
+    field e = 190;
+    method sussyahh(param bruh) { write(1); };
+};
+
+write(a.b);

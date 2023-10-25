@@ -69,6 +69,9 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
             return visitor_visit_unop(visitor, node);
         case AST_LISTINDX:
             return visitor_visit_listindx(visitor, node);
+        case AST_OBJ: {
+            return visitor_visit_obj_def(visitor, node);
+        }
         case AST_COMPOUND:
             return visitor_visit_compound(visitor, node);
             break;
@@ -160,6 +163,9 @@ AST *visitor_visit_func_call(Visitor *visitor, AST *node) {
     }
     if (strcmp(node->func_call_name, "strindx") == 0) {
         return std_func_strindx(visitor, node->func_call_args, node->func_call_args_size, node->line);
+    }
+    if (strcmp(node->func_call_name, "listindx") == 0) {
+        return std_func_listindx(visitor, node->func_call_args, node->func_call_args_size, node->line);
     }
     AST* fdef = scope_get_function_definition(visitor->current_scope, node->func_call_name);
     if(fdef != NULL) {
@@ -424,6 +430,23 @@ AST *visitor_convert_to_str(Visitor *visitor, AST *node) {
             strcat(buffer, visitor_convert_to_str(visitor, v_node)->str_value);
             break;
         }
+        case AST_OBJ: {
+            strcat(buffer, "{ ");
+            for(int i = 0; i < v_node->fields_size; i++) {
+                if(i != 0)  strcat(buffer, ", ");
+                strcat(buffer, "Field ");
+                strcat(buffer, v_node->fields[i]->var_def_var_name);
+                strcat(buffer, ": ");
+                strcat(buffer, visitor_convert_to_str(visitor, v_node->fields[i]->var_def_value)->str_value);
+            }
+            for(int i = 0; i < v_node->methods_size; i++) {
+                strcat(buffer, ", ");
+                strcat(buffer, "Method ");
+                strcat(buffer, v_node->methods[i]->func_def_name);
+            }
+            strcat(buffer, " }");
+            break;
+        }
         default: {
             strcat(buffer, "NULL");
             break;
@@ -432,6 +455,10 @@ AST *visitor_convert_to_str(Visitor *visitor, AST *node) {
     str_node->str_value = buffer;
    // printf("%s",str_node->str_value);
     return str_node;
+}
+AST *visitor_visit_obj_def(Visitor *visitor, AST *node) {
+    //scope_add_obj_def(visitor->current_scope, node);
+    return node;
 }
 AST *visitor_visit_compound(Visitor *visitor, AST *node) {
     Scope* compound_scope = scope_init(visitor->current_scope, visitor->e);

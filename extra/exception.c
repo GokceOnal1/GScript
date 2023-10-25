@@ -45,8 +45,8 @@ void _print_err(ErrorStack *e) {
     }
 }
 void _terminate_gs(ErrorStack *e) {
-    printf( "Fatal Error: Program terminated early.\n");
-    printf( "%d errors", e->errors_size);
+    printf( color(RED, "Fatal Error: Program terminated early.\n"));
+    printf( color(RED, "%d error(s)"), e->errors_size);
     _print_err(e);
     exit(1);
 }

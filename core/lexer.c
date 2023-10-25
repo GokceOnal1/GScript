@@ -57,11 +57,6 @@ Token *lexer_get_next_token(Lexer *lexer) {
         if (isdigit(lexer->c)) {
             return lexer_collect_num(lexer);
         }
-        if (lexer->c == '.') {
-            //_GSERR(lexer->line, "GS602 - Invalid syntax for a number");
-            _GSERR_s(lexer->e, lexer->line, "GS602 - Invalid syntax for a number");
-            _terminate_gs(lexer->e);
-        }
 
         switch (lexer->c) {
             case '=':
@@ -69,41 +64,32 @@ Token *lexer_get_next_token(Lexer *lexer) {
           lexer, token_init(T_EQL, lexer_get_current_char_as_str(lexer),
           lexer->line));*/
                         lexer_collect_eq(lexer);
-                break;
             case '<':
                 return lexer_collent_lt(lexer);
-                break;
             case '>':
                 return lexer_collect_gt(lexer);
-                break;
             case '!':
                 return lexer_collect_neq(lexer);
-                break;
             case '&':
                 return lexer_advance_with_token(
                         lexer,
                         token_init(T_AND, lexer_get_current_char_as_str(lexer), lexer->line));
-                break;
             case '%':
                 return lexer_advance_with_token(
                         lexer,
                         token_init(T_MOD, lexer_get_current_char_as_str(lexer), lexer->line));
-                break;
             case '|':
                 return lexer_advance_with_token(
                         lexer,
                         token_init(T_OR, lexer_get_current_char_as_str(lexer), lexer->line));
-                break;
             case ';':
                 return lexer_advance_with_token(
                         lexer, token_init(T_SEMI, lexer_get_current_char_as_str(lexer),
                                           lexer->line));
-                break;
             case '~':
                 return lexer_advance_with_token(
                         lexer, token_init(T_TILDE, lexer_get_current_char_as_str(lexer),
                                           lexer->line));
-                break;
             case ':':
                 return lexer_advance_with_token(
                         lexer, token_init(T_COLON, lexer_get_current_char_as_str(lexer),
@@ -112,7 +98,6 @@ Token *lexer_get_next_token(Lexer *lexer) {
                 return lexer_advance_with_token(
                         lexer,
                         token_init(T_LPR, lexer_get_current_char_as_str(lexer), lexer->line));
-                break;
             case ')':
                 return lexer_advance_with_token(
                         lexer,
@@ -153,11 +138,12 @@ Token *lexer_get_next_token(Lexer *lexer) {
                 return lexer_advance_with_token(
                         lexer,
                         token_init(T_RBR, lexer_get_current_char_as_str(lexer), lexer->line));
-                break;
-
+            case '.':
+                return lexer_advance_with_token(lexer,
+                                                token_init(T_DOT, lexer_get_current_char_as_str(lexer), lexer->line));
             default: {
                 _GSERR_s(lexer->e, lexer->line, "GS102 - Unsupported character '%c'", lexer->c);
-                printf("\n%d\n" ,lexer->c);
+               // printf("\n%d\n" ,lexer->c);
                 lexer_advance(lexer);
                 break;
             }
@@ -172,7 +158,11 @@ Token *lexer_collect_str(Lexer *lexer) {
     value[0] = '\0';
     while (lexer->c != '"') {
         char *s = lexer_get_current_char_as_str(lexer);
-        value = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
+        char *tmp = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _terminate_gs(lexer->e);
+        }
         strcat(value, s);
         lexer_advance(lexer);
     }
@@ -185,7 +175,11 @@ Token *lexer_collect_id(Lexer *lexer) {
     value[0] = '\0';
     while (isalnum(lexer->c) || lexer->c == '_') {
         char *s = lexer_get_current_char_as_str(lexer);
-        value = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
+        char *tmp = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _terminate_gs(lexer->e);
+        }
         strcat(value, s);
         lexer_advance(lexer);
     }
@@ -204,7 +198,11 @@ Token *lexer_collect_num(Lexer *lexer) {
             _terminate_gs(lexer->e);
         }
         char *s = lexer_get_current_char_as_str(lexer);
-        value = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
+        char *tmp = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _terminate_gs(lexer->e);
+        }
         strcat(value, s);
         lexer_advance(lexer);
     }
@@ -224,7 +222,11 @@ Token *lexer_collect_eq(Lexer *lexer) {
     if (lexer->c == '=') {
         lexer_advance(lexer);
         type = T_EE;
-        value = realloc(value, 3 * sizeof(char));
+        char* tmp = realloc(value, 3 * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _terminate_gs(lexer->e);
+        }
         value[0] = '=';
         value[1] = '=';
         value[2] = '\0';
@@ -238,7 +240,11 @@ Token *lexer_collent_lt(Lexer *lexer) {
     if (lexer->c == '=') {
         lexer_advance(lexer);
         type = T_LTE;
-        value = realloc(value, 3 * sizeof(char));
+        char* tmp = realloc(value, 3 * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _terminate_gs(lexer->e);
+        }
         value[0] = '<';
         value[1] = '=';
         value[2] = '\0';
@@ -252,7 +258,11 @@ Token *lexer_collect_gt(Lexer *lexer) {
     if (lexer->c == '=') {
         lexer_advance(lexer);
         type = T_GTE;
-        value = realloc(value, 3 * sizeof(char));
+        char* tmp = realloc(value, 3 * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _terminate_gs(lexer->e);
+        }
         value[0] = '>';
         value[1] = '=';
         value[2] = '\0';
@@ -266,7 +276,11 @@ Token *lexer_collect_neq(Lexer *lexer) {
     if (lexer->c == '=') {
         lexer_advance(lexer);
         type = T_NEQ;
-        value = realloc(value, 3 * sizeof(char));
+        char* tmp = realloc(value, 3 * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _terminate_gs(lexer->e);
+        }
         value[0] = '!';
         value[1] = '=';
         value[2] = '\0';

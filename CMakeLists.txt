@@ -24,4 +24,7 @@ add_executable(GScript2 main.c
         extra/stdfunc.h
         core/scope.c
         core/scope.h
-        )
+        util/test.c
+        util/test.h
+        util/defs.h
+)

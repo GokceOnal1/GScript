@@ -43,5 +43,8 @@ AST *parser_parse_while_statement(Parser *parser, Scope *scope);
 AST *parser_parse_function_param(Parser *parser, Scope *scope);
 AST *parser_parse_list_body(Parser *parser, Scope *scope);
 AST *parser_parse_list_sub_index(Parser *parser, Scope *scope);
+AST *parser_parse_obj(Parser *parser, Scope *scope);
+AST *parser_parse_obj_access(Parser *parser, Scope *scope);
+AST *parser_parse_field_or_method(Parser *parser, Scope *scope);
 
 #endif //GSCRIPT2_PARSER_H

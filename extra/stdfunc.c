@@ -5,7 +5,7 @@ AST *std_func_write(Visitor *visitor, AST **argv, int argc, unsigned line) {
         AST *visited_ast = visitor_visit(visitor, argv[i]);
         if (visited_ast->type != AST_STR && visited_ast->type != AST_NUM &&
             visited_ast->type != AST_BOOL && visited_ast->type != AST_LIST &&
-            visited_ast->type != AST_LISTINDX) {
+            visited_ast->type != AST_LISTINDX && visited_ast->type != AST_OBJ) {
             // printast(visited_ast->type);
             //_GSERR(line, "GS504 - Illegal argument to function 'write'");
             _GSERR_s(visitor->e, line,
@@ -178,5 +178,19 @@ AST *std_func_strindx(Visitor *visitor, AST **argv, int argc, unsigned line) {
     return char_ast;
 }
 AST *std_func_listindx(Visitor *visitor, AST **argv, int argc, unsigned line) {
-
+    if(argc != 2) {
+        _GSERR_s(visitor->e, line, "GS502 - Function 'listindx' does not take %d arguments", argc);
+        return ast_init(AST_NOOP);
+    }
+    AST *list_var = visitor_visit(visitor, argv[0]);
+    if(list_var->type != AST_LIST) {
+        _GSERR_s(visitor->e, line, "GS504 - Illegal argument to function 'listindx'");
+        return ast_init(AST_NOOP);
+    }
+    AST *index = visitor_visit(visitor, argv[1]);
+    if(index->type != AST_NUM) {
+        _GSERR_s(visitor->e, line, "GS504 - Illegal argument to function 'listindx'");
+        return ast_init(AST_NOOP);
+    }
+    return list_var->list_contents[(unsigned)index->num_value];
 }

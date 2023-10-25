@@ -17,5 +17,6 @@ AST *std_func_num(Visitor *visitor, AST **argv, int argc, unsigned line);
 AST *std_func_len(Visitor *visitor, AST **argv, int argc, unsigned line);
 AST *std_func_strindx(Visitor *visitor, AST **argv, int argc, unsigned line);
 AST *std_func_listindx(Visitor *visitor, AST **argv, int argc, unsigned line);
+AST *std_func_listadd(Visitor *visitor, AST **argv, int argc, unsigned line);
 
 #endif //GSCRIPT2_STDFUNC_H

@@ -2,7 +2,7 @@
 #define GSCRIPT2_AST_H
 #include <stdlib.h>
 typedef struct AST_s {
-    enum { AST_VAR_DEF, AST_FUNC_DEF, AST_VAR, AST_FUNC_CALL, AST_STR, AST_COMPOUND, AST_NOOP, AST_NUM, AST_BINOP, AST_BOOL, AST_IF, AST_REPEAT, AST_OUT, AST_SKIP, AST_REASSIGN, AST_WHILE, AST_UNOP, AST_PARAM, AST_RETURN, AST_LIST, AST_LISTINDX, AST_OBJREF, AST_GROUP } type;
+    enum { AST_VAR_DEF, AST_FUNC_DEF, AST_VAR, AST_FUNC_CALL, AST_STR, AST_COMPOUND, AST_NOOP, AST_NUM, AST_BINOP, AST_BOOL, AST_IF, AST_REPEAT, AST_OUT, AST_SKIP, AST_REASSIGN, AST_WHILE, AST_UNOP, AST_PARAM, AST_RETURN, AST_LIST, AST_LISTINDX, AST_OBJREF, AST_GROUP, AST_OBJ, AST_DOT } type;
     struct scope_s* scope;
     unsigned int line;
 
@@ -88,6 +88,13 @@ typedef struct AST_s {
 
     //AST_GROUP
     char* group_name;
+
+    //AST_OBJ
+    char *obj_name;
+    struct AST_s ** fields;
+    size_t fields_size;
+    struct AST_s ** methods;
+    size_t methods_size;
 
 } AST;
 

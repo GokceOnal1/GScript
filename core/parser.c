@@ -38,6 +38,8 @@ AST *parser_parse_statement(Parser *parser, Scope *scope) {
             return parser_parse_id(parser, scope);
         case T_STR:
             return parser_parse_string(parser, scope);
+        default:
+            break;
     }
     return ast_init(AST_NOOP);
 }
@@ -56,12 +58,16 @@ AST *parser_parse_statements(Parser *parser, Scope *scope) {
     while (parser->current_token->type == T_SEMI) {
         parser_eat(parser, T_SEMI);
 
-        AST *ast_statement = parser_parse_comp_expr(parser, scope);
-        if (ast_statement) {
+        AST *ast = parser_parse_comp_expr(parser, scope);
+        if (ast) {
             compound->compound_size++;
-            compound->compound_value = realloc(
+            AST** tmp = realloc(
                     compound->compound_value, compound->compound_size * sizeof(AST *));
-            compound->compound_value[compound->compound_size - 1] = ast_statement;
+            if(tmp) compound->compound_value = tmp; else {
+                _GSERR_s(parser->e, parser->current_token->line, "GS.b.02 - Internal null pointer");
+                _terminate_gs(parser->e);
+            }
+            compound->compound_value[compound->compound_size - 1] = ast;
         }
     }
     return compound;
@@ -202,13 +208,16 @@ AST *parser_parse_function_call(Parser *parser, Scope *scope) {
 
     while (parser->current_token->type == T_COMMA) {
         parser_eat(parser, T_COMMA);
-        AST *ast_expr = parser_parse_comp_expr(parser, scope);
+        AST *ast = parser_parse_comp_expr(parser, scope);
         function_call->func_call_args_size++;
-        function_call->func_call_args =
-                realloc(function_call->func_call_args,
-                        function_call->func_call_args_size * sizeof(AST *));
+        AST** tmp = realloc(function_call->func_call_args,
+                            function_call->func_call_args_size * sizeof(AST *));
+        if(tmp) function_call->func_call_args = tmp; else {
+            _GSERR_s(parser->e, parser->current_token->line, "GS.b.02 - Internal null pointer");
+            _terminate_gs(parser->e);
+        }
         function_call->func_call_args[function_call->func_call_args_size - 1] =
-                ast_expr;
+                ast;
     }
     parser_eat(parser, T_RPR);
     function_call->scope = scope;
@@ -218,7 +227,7 @@ AST *parser_parse_function_call(Parser *parser, Scope *scope) {
  * information*/
 AST *parser_parse_variable(Parser *parser, Scope *scope) {
     char *token_value = parser->current_token->value;
-    parser_eat(parser, T_ID); // Either var name, or func call name
+    parser_eat(parser, T_ID); // Either var name, or func call name, or obj name
     if (parser->current_token->type == T_LPR) {
         return parser_parse_function_call(parser, scope);
     } else if (parser->current_token->type == T_EQL) {
@@ -268,6 +277,8 @@ AST *parser_parse_id(Parser *parser, Scope *scope) {
     } else if (strcmp(parser->current_token->value, "else") == 0) {
         _GSERR_s(parser->e, parser->current_token->line, "GS106 - Unrelated 'else' caught");
         return NULL;
+    } else if (strcmp(parser->current_token->value, "obj") == 0) {
+        return parser_parse_obj(parser, scope);
     } else if ((strcmp(parser->current_token->value, "true") == 0) ||
                (strcmp(parser->current_token->value, "false") == 0)) {
 
@@ -474,4 +485,67 @@ AST *parser_parse_list_sub_index(Parser *parser, Scope *scope) {
     ast->list_sub_index = (unsigned)parser_parse_expr(parser, scope)->num_value;
     parser_eat(parser, T_RSQB);
     return ast;
+}
+AST *parser_parse_obj(Parser *parser, Scope *scope) {
+    AST *ast = ast_init(AST_OBJ);
+    parser_eat(parser, T_ID);
+    ast->obj_name = parser->current_token->value;
+    parser_eat(parser, T_ID);
+    parser_eat(parser, T_EQL);
+    parser_eat(parser, T_LBR);
+    while(parser->current_token->type != T_RBR){
+        AST *res = parser_parse_field_or_method(parser, scope);
+        if(res->type == AST_VAR_DEF) {
+            if(ast->fields_size == 0) {
+                ast->fields_size = 1;
+                ast->fields = calloc(1, sizeof(AST*));
+                ast->fields[0] = res;
+            } else {
+                ast->fields_size++;
+                AST **temp = (AST**)realloc(ast->fields, ast->fields_size * sizeof(AST*));
+                if(temp) {
+                    ast->fields = temp;
+                } else {
+                    _GSERR_s(parser->e, parser->current_token->line,"GS.b.02 - Internal null pointer");
+                }
+                ast->fields[ast->fields_size-1] = res;
+            }
+        } else if(res->type == AST_FUNC_DEF) {
+            if(ast->methods_size == 0) {
+                ast->methods_size = 1;
+                ast->methods = calloc(1, sizeof(AST*));
+                ast->methods[0] = res;
+            } else {
+                ast->methods_size++;
+                AST **temp = (AST**)realloc(ast->methods, ast->methods_size * sizeof(AST*));
+                if(temp) {
+                    ast->methods = temp;
+                } else {
+                    _GSERR_s(parser->e, parser->current_token->line,"GS.b.02 - Internal null pointer");
+                }
+                ast->methods[ast->methods_size-1] = res;
+            }
+        }
+        parser_eat(parser, T_SEMI);
+    }
+    parser_eat(parser, T_RBR);
+    AST* ret = ast_init(AST_VAR_DEF);
+    ret->var_def_var_name = ast->obj_name;
+    ret->var_def_value = ast;
+    return ret;
+}
+AST *parser_parse_field_or_method(Parser *parser, Scope *scope) {
+    char *temp = parser->current_token->value;
+    AST *res = NULL;
+    if(strcmp(temp, "field") == 0) {
+        res = parser_parse_variable_definition(parser, scope);
+        return res;
+
+    } else if (strcmp(temp, "method") == 0) {
+        res = parser_parse_function_definition(parser, scope);
+        return res;
+    } else {
+        _GSERR_s(parser->e, parser->current_token->line, "GS.304 - Expected 'field' or 'method' for object definition");
+    }
+    return NULL;
 }

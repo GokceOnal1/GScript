@@ -10,7 +10,7 @@
 #define RESET "\x1B[0m"
 
 #define clruse 1
-
+#define nulltext "GS.b.02 - Internal null pointer"
 #if clruse
 #define color(col, str) col str "\x1b[0m"
 #else
