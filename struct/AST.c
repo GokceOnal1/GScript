@@ -51,5 +51,10 @@ AST *ast_init(int type) {
     ast->fields_size = 0;
     ast->methods = NULL;
     ast->methods_size = 0;
+    ast->objects = NULL;
+    ast->objects_size = 0;
+    ast->objaccess_left = NULL;
+    ast->objaccess_right = NULL;
+    ast->obj_objdef = NULL;
     return ast;
 }

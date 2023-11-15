@@ -2,7 +2,7 @@
 ## Todo:
 Add support for reference parameters <br>
 Add standard functions for list handling <br>
-Standardize error system
+Standardize error system <br>
 Add objects
 ## Error Codes:
 
@@ -18,9 +18,11 @@ GS.201 - Uncaught statement of type %d
 GS.301 - Undefined identifier %s
 GS.302 - Variable '%s' already exists in the current scope
 GS.303 - Variable '%s' does not exist in the current scope
-GS.304 - Expected 'field' or 'method' for object definition
-GS.305 - Object '%s' already exists in the current scope
-GS.306 - Object '%s' does not exist in the current scope
+GS.304 - Expected 'field' or 'method' for object definition 
+GS.401 - Object '%s' already exists in the current scope
+GS.402 - Object '%s' does not exist in the current scope
+GS.403 - Member '%s' of object '%s' does not exist
+GS.404 - Member access attempted on non-object
 GS.501 - No arguments provided where needed
 GS.502 - Function '%s' does not take %d arguments
 GS.503 - Function '%s' does not exist in the current scope

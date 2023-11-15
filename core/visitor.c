@@ -28,6 +28,7 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
             return visitor_visit_var_reassign(visitor, node);
             break;
         case AST_FUNC_DEF:
+           // printf("func def");
             return visitor_visit_func_def(visitor, node);
             break;
         case AST_VAR:
@@ -36,7 +37,8 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
         case AST_OBJREF:
 
         case AST_FUNC_CALL:
-            return visitor_visit_func_call(visitor, node);
+           // printf("func call");
+            return visitor_visit_func_call(visitor, node, NULL);
             break;
         case AST_STR:
             return visitor_visit_str(visitor, node);
@@ -69,9 +71,15 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
             return visitor_visit_unop(visitor, node);
         case AST_LISTINDX:
             return visitor_visit_listindx(visitor, node);
-        case AST_OBJ: {
+        case AST_OBJ_DEF: {
+            //printf("obj def");
             return visitor_visit_obj_def(visitor, node);
         }
+        case AST_OBJACCESS: {
+           // printf("obj acc");
+            return visitor_visit_objaccess(visitor, node);
+        }
+        case AST_OBJ: return node;
         case AST_COMPOUND:
             return visitor_visit_compound(visitor, node);
             break;
@@ -79,11 +87,8 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
             return node;
             break;
     }
-    char d[100];
-    sprintf(d, "GS201 - Uncaught statement of type %d", node->type);
-    _GSERR(node->line, d);
-    exit(1);
-    return ast_init(AST_NOOP);
+    _GSERR_s(visitor->e, node->line, errGS201);
+    _terminate_gs(visitor->e);
 }
 /*Tells the visitor to interpret a variable definition and store it to memory*/
 AST *visitor_visit_var_def(Visitor *visitor, AST *node) {
@@ -92,7 +97,7 @@ AST *visitor_visit_var_def(Visitor *visitor, AST *node) {
     def->var_def_var_name = node->var_def_var_name;
     def->var_def_value = val;
     scope_add_var_def(visitor->current_scope, def);
-    return node;
+    return def;
 }
 AST *visitor_visit_var_reassign(Visitor *visitor, AST *node) {
     // printf("\n ENCOUNTERED REASSIGN with value type %d\n", node->var_def_value->type);
@@ -123,6 +128,9 @@ AST *visitor_visit_var(Visitor *visitor, AST *node) {
         result->num_value = 3.1415926535898;
         return result;
     }
+    /*for(int p = 0; p < visitor->current_scope->parent->var_defs_size; p++) {
+        printf(" ()in var def: %s ", visitor->current_scope->parent->var_defs[p]->var_def_var_name);
+    }*/
     AST* val = scope_get_var_def(visitor->current_scope, node->var_name);
     if(val == NULL) {
         char d[100];
@@ -133,7 +141,7 @@ AST *visitor_visit_var(Visitor *visitor, AST *node) {
     }
 }
 /*Tells the visitor to interpret a function call and execute it*/
-AST *visitor_visit_func_call(Visitor *visitor, AST *node) {
+AST *visitor_visit_func_call(Visitor *visitor, AST *node, Scope *calledfrom) {
 //  if(node->should_break) {printf("RETURN") ; exit(1);}
     if (strcmp(node->func_call_name, "write") == 0) {
         return std_func_write(visitor, node->func_call_args,
@@ -169,26 +177,35 @@ AST *visitor_visit_func_call(Visitor *visitor, AST *node) {
     }
     AST* fdef = scope_get_function_definition(visitor->current_scope, node->func_call_name);
     if(fdef != NULL) {
+     //   printf("here");
         Scope* prev = visitor->current_scope;
+        if(calledfrom != NULL) {prev = calledfrom; /*printf("Calledfrom not null");*/ }
         visitor->current_scope = fdef->scope;
         //printf("%d", fdef->func_def_args_size);
         AST* res = NULL;
         AST** prev_args = calloc(fdef->func_def_args_size, sizeof(AST*));
         for(int i = 0; i < fdef->func_def_args_size; i++) {
+         //   printf("\nNew Iter");
             prev_args[i] = ast_init(AST_VAR_DEF);
             prev_args[i]->var_def_value = scope_get_var_def(visitor->current_scope, fdef->func_def_args[i]->var_def_var_name);
             prev_args[i]->var_def_var_name = fdef->func_def_args[i]->var_def_var_name;
-
+          // printf("\nhere2");
             AST* arg = ast_init(AST_VAR_DEF);
             arg->var_def_var_name = fdef->func_def_args[i]->var_def_var_name;
             visitor->current_scope = prev;
+            //!! Issue is here
             arg->var_def_value = visitor_visit(visitor,node->func_call_args[i]);
             visitor->current_scope = fdef->scope;
-            // printf("%f", arg->var_def_value->num_value);
-            // printf("\n%s", arg->var_def_var_name);
+            // printf("\n%f", arg->var_def_value->num_value);
+          //   printf("\n%s", arg->var_def_var_name);
             scope_set_var(fdef->scope, arg);
+        //   printf("here 3");
             // printf("%f", arg->var_def_value->num_value);
         }
+       /* for(int p = 0; p < visitor->current_scope->var_defs_size; p++) {
+            printf(" in func def %s ", visitor->current_scope->var_defs[p]->var_def_var_name);
+        }*/
+       // printf("body type: %d ", fdef->func_def_body->type);
         res = visitor_visit(visitor, fdef->func_def_body);
         AST* returned = NULL;
         if(res->return_value) {
@@ -206,10 +223,8 @@ AST *visitor_visit_func_call(Visitor *visitor, AST *node) {
 //    if(res->should_return) exit(1);
         return returned;
     }
-    char d[100];
-    sprintf(d, "GS503 - Undefined function '%s'", node->func_call_name);
-    _GSERR(node->line, d);
-    exit(1);
+    _GSERR_s(visitor->e, node->line, errGS503);
+    _terminate_gs(visitor->e);
 }
 /*Tells the visitor to interpret a string AST node*/
 AST *visitor_visit_str(Visitor *visitor, AST *node) { return node; }
@@ -261,7 +276,7 @@ AST *visitor_visit_binop(Visitor *visitor, AST *node) {
         }
         case T_DIV: {
             if(right->num_value == 0) {
-                _GSERR(node->line, "GS601 - Dividing by zero is illegal");
+                _GSERR_s(visitor->e, node->line, errGS601);
             }
             AST *result = ast_init(AST_NUM);
             result->num_value = left->num_value / right->num_value;
@@ -269,7 +284,7 @@ AST *visitor_visit_binop(Visitor *visitor, AST *node) {
         }
         case T_MOD: {
             if(right->num_value == 0) {
-                _GSERR(right->line, "GS601 - Dividing by zero is illegal");
+                _GSERR_s(visitor->e, right->line, errGS601);
             }
             AST *result = ast_init(AST_NUM);
             result->num_value = (int)left->num_value % (int)right->num_value;
@@ -328,7 +343,8 @@ AST *visitor_visit_binop(Visitor *visitor, AST *node) {
             return result;
         }
         default: {
-            _GSERR(0, "Error while interpreting <INTERNAL>");
+
+            _GSERR_s(visitor->e, node->line, errGS604);
             return ast_init(AST_NOOP);
         }
     }
@@ -354,11 +370,14 @@ AST *visitor_visit_if_statement(Visitor *visitor, AST *node) {
 AST *visitor_visit_repeat_statement(Visitor *visitor, AST *node) {
     AST *count = visitor_visit(visitor, node->repeat_count);
     for(int i = 0; i < count->num_value; i++) {
+      //  printf("Starting %d iter", i+1);
         AST* stat = visitor_visit(visitor, node->repeat_body);
         //  if(scope_get_var_def(visitor->current_scope, "x")->num_value == 9) printf("ok");
         //  printf(" %f ", scope_get_var_def(visitor->current_scope, "x")->var_def_value->num_value);
+     //   printf("repeated, finished %d iter\n", i+1);
         if(stat->should_break) break;
     }
+ //   printf("done");
     return ast_init(AST_NOOP);
 }
 AST *visitor_visit_while_statement(Visitor *visitor, AST *node) {
@@ -432,17 +451,29 @@ AST *visitor_convert_to_str(Visitor *visitor, AST *node) {
         }
         case AST_OBJ: {
             strcat(buffer, "{ ");
-            for(int i = 0; i < v_node->fields_size; i++) {
+            AST *odef = v_node->obj_objdef;
+            int c = 0;
+            for(int i = 0; i < odef->fields_size; i++) {
+                c++;
                 if(i != 0)  strcat(buffer, ", ");
                 strcat(buffer, "Field ");
-                strcat(buffer, v_node->fields[i]->var_def_var_name);
-                strcat(buffer, ": ");
-                strcat(buffer, visitor_convert_to_str(visitor, v_node->fields[i]->var_def_value)->str_value);
+                strcat(buffer, odef->fields[i]->var_def_var_name);
+                strcat(buffer, ": "); // ISSUE AT LINE BELOW
+                strcat(buffer, visitor_convert_to_str(visitor, scope_get_var_def(odef->scope, odef->fields[i]->var_def_var_name))->str_value);
             }
-            for(int i = 0; i < v_node->methods_size; i++) {
-                strcat(buffer, ", ");
+            for(int i = 0; i < odef->methods_size; i++) {
+                if (c != 0) strcat(buffer, ", ");
+                c++;
                 strcat(buffer, "Method ");
-                strcat(buffer, v_node->methods[i]->func_def_name);
+                strcat(buffer, odef->methods[i]->func_def_name);
+            }
+            for(int i = 0; i < odef->objects_size; i++) {
+                if(c != 0) strcat(buffer, ", ");
+                c++;
+                strcat(buffer, "Object ");
+                strcat(buffer, odef->objects[i]->obj_name);
+                strcat(buffer, ": ");
+                strcat(buffer, visitor_convert_to_str(visitor, scope_get_var_def(odef->scope, odef->objects[i]->obj_name))->str_value);
             }
             strcat(buffer, " }");
             break;
@@ -457,16 +488,119 @@ AST *visitor_convert_to_str(Visitor *visitor, AST *node) {
     return str_node;
 }
 AST *visitor_visit_obj_def(Visitor *visitor, AST *node) {
-    //scope_add_obj_def(visitor->current_scope, node);
+    //Scope *objscope = scope_init(visitor->current_scope, visitor->e);
+   // visitor->current_scope = objscope;
+   /* for(int p = 0; p < visitor->current_scope->parent->var_defs_size; p++) {
+        printf(" in obj def: %s ", visitor->current_scope->parent->var_defs[p]->var_def_var_name);
+    }*/
+    Scope *origin = visitor->current_scope;
+    Scope *fieldscope = scope_init(NULL, visitor->e);
+    AST *new_node = ast_init(AST_OBJ_DEF);
+    new_node = node;
+    for(unsigned i = 0; i < new_node->fields_size; i++) {
+     //  printf("type: %d", node->fields[i]->var_def_value->type);
+
+        AST *toadd = ast_init(AST_VAR_DEF);
+        toadd = visitor_visit_var_def(visitor, new_node->fields[i]);
+       // toadd->var_def_value = visitor_visit(visitor, new_node->fields[i]->var_def_value);
+      //  printf(" num %d  ", node->fields[i]->var_def_value->type);
+      //  toadd->var_def_var_name = new_node->fields[i]->var_def_var_name;
+      //  new_node->fields[i] = toadd;
+        visitor->current_scope = fieldscope;
+        scope_add_var_def(visitor->current_scope, toadd);
+        visitor->current_scope = origin;
+      //  printf("ok2");
+    }
+
+    for(unsigned i = 0; i < new_node->methods_size; i++) {
+        visitor->current_scope = fieldscope;
+        visitor_visit_func_def(visitor, new_node->methods[i]);
+        visitor->current_scope = origin;
+    }
+    for(unsigned i = 0; i < new_node->objects_size; i++) {
+      //  AST *toadd = ast_init(AST_VAR_DEF);
+        AST* o = ast_init(AST_OBJ);
+        o->obj_objdef = visitor_visit(visitor, new_node->objects[i]);
+        //o->obj_objdef = node->objects[i];
+        AST* v = ast_init(AST_VAR_DEF);
+        v->var_def_var_name = new_node->objects[i]->obj_name;
+        v->var_def_value = o;
+        visitor->current_scope = fieldscope;
+        scope_add_var_def(visitor->current_scope, v);
+        visitor->current_scope = origin;
+    //    scope_add_var_def(visitor->current_scope, v);
+    }
+    new_node->scope = fieldscope;
+ //   visitor->current_scope = visitor->current_scope->parent;
+    AST* o = ast_init(AST_OBJ);
+    o->obj_objdef = new_node;
+    AST* v = ast_init(AST_VAR_DEF);
+    v->var_def_var_name = new_node->obj_name;
+    v->var_def_value = o;
+    v->line = node->line;
+    scope_add_var_def(visitor->current_scope, v);
+  //  printf(" overhere ");
     return node;
+}
+AST *visitor_visit_objaccess(Visitor *visitor, AST *node) {
+  //  printf(" visiting objacc ");
+   AST *main_obj = node->objaccess_left;
+   AST *v_main_obj = visitor_visit(visitor, main_obj);
+   if(v_main_obj->type == AST_OBJ) {
+      // printf("here");
+       AST *odef = v_main_obj->obj_objdef;
+       if(node->objaccess_right->type == AST_VAR) {
+           char *member_name = node->objaccess_right->var_name;
+             // printf(" %s ", member_name);
+           AST *member = scope_get_var_def(odef->scope, (const char *) member_name);
+           if (member != NULL) {
+               if (node->objaccess_right->type == AST_OBJACCESS) {
+                   return visitor_visit_objaccess(visitor, node->right);
+               } else {
+                   // printf("%d", member->type);
+                   return member;
+               }
+           } else {
+               _GSERR_s(visitor->e, node->line, errGS403, member_name, odef->obj_name); //!line
+               return ast_init(AST_NOOP);
+           }
+       } else if(node->objaccess_right->type == AST_FUNC_CALL) {
+           char *func_name = node->objaccess_right->func_call_name;
+           AST *method = scope_get_function_definition(odef->scope, (const char*) func_name);
+           if (method != NULL) {
+               if (node->objaccess_right->type == AST_OBJACCESS) {
+                   return visitor_visit_objaccess(visitor, node->right);
+               } else {
+                   Scope *origin = visitor->current_scope;
+                   visitor->current_scope = odef->scope;
+                   AST *res = visitor_visit_func_call(visitor, node->objaccess_right, origin);
+                   visitor->current_scope = origin;
+                   return res;
+               }
+           } else {
+               _GSERR_s(visitor->e, node->line, errGS403, func_name, odef->obj_name); //!line
+               return ast_init(AST_NOOP);
+           }
+       }
+   } else {
+       _GSERR_s(visitor->e, node->line, errGS404);
+       return ast_init(AST_NOOP);
+   }
 }
 AST *visitor_visit_compound(Visitor *visitor, AST *node) {
     Scope* compound_scope = scope_init(visitor->current_scope, visitor->e);
     visitor->current_scope = compound_scope;
     for (int i = 0; i < node->compound_size; i++) {
+        //printf(" in compound: %d ", node->compound_value[i]->type);
+       /* for(int p = 0; p < visitor->current_scope->parent->var_defs_size; p++) {
+            printf(" (%d)in comp def: %s ",i, visitor->current_scope->parent->var_defs[p]->var_def_var_name);
+        }*/
+
         AST* stat = visitor_visit(visitor, node->compound_value[i]);
         if(stat->should_return || stat->should_break) return stat;
     }
-    visitor->current_scope = visitor->current_scope->parent;
+  //  printf("done with comp");
+    visitor->current_scope = compound_scope->parent;
+  //  free(compound_scope);
     return node;
 }

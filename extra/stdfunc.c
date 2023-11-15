@@ -9,7 +9,7 @@ AST *std_func_write(Visitor *visitor, AST **argv, int argc, unsigned line) {
             // printast(visited_ast->type);
             //_GSERR(line, "GS504 - Illegal argument to function 'write'");
             _GSERR_s(visitor->e, line,
-                     "GS504 - Illegal argument to function 'write'");
+                     "GS504 - Illegal argument to function 'write' (type %d)", visited_ast->type);
             return ast_init(AST_NOOP);
             //_terminate_gs(visitor->e);
         }

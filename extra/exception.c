@@ -39,10 +39,11 @@ void _GSERR_s(ErrorStack *e, unsigned line, char *description, ...) {
     }
 }
 void _print_err(ErrorStack *e) {
-    e->errors_size != 0 ? printf( color(RED,"\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")) : printf("\n");
+    e->errors_size != 0 ? printf( color(RED,"\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")) : printf("");
     for (int i = 0; i < e->errors_size; ++i) {
         printf(color(YEL, "%s"), e->errors[i]);
     }
+    if(e->errors_size!=0)printf( color(RED,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"));
 }
 void _terminate_gs(ErrorStack *e) {
     printf( color(RED, "Fatal Error: Program terminated early.\n"));

@@ -24,7 +24,7 @@ AST *visitor_visit_var_def(Visitor *visitor, AST *node);
 AST *visitor_visit_var_reassign(Visitor *visitor, AST *node);
 AST *visitor_visit_func_def(Visitor *visitor, AST *node);
 AST *visitor_visit_var(Visitor *visitor, AST *node);
-AST *visitor_visit_func_call(Visitor *visitor, AST *node);
+AST *visitor_visit_func_call(Visitor *visitor, AST *node, Scope *calledfrom);
 AST *visitor_visit_str(Visitor *visitor, AST *node);
 AST *visitor_visit_num(Visitor *visitor, AST *node);
 AST *visitor_visit_binop(Visitor *visitor, AST *node);
@@ -36,6 +36,7 @@ AST *visitor_visit_unop(Visitor *visitor, AST *node);
 AST* visitor_visit_listindx(Visitor *visitor, AST *node);
 AST *visitor_visit_compound(Visitor *visitor, AST *node);
 AST *visitor_visit_obj_def(Visitor *visitor, AST *node);
+AST *visitor_visit_objaccess(Visitor *visitor, AST *node);
 AST *visitor_convert_to_str(Visitor *visitor, AST *node);
 
 #endif //GSCRIPT2_VISITOR_H

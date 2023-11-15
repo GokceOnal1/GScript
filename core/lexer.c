@@ -31,8 +31,10 @@ void lexer_skip_space(Lexer *lexer) {
 /*Advanced C until the char in CONTENTS is not inside a comment ($)*/
 void lexer_skip_comments(Lexer *lexer) {
     lexer_advance(lexer);
-    while (lexer->c != '$' && lexer->c != '\0')
+    while (lexer->c != '$' && lexer->c != '\0') {
+        printf("here");
         lexer_advance(lexer);
+    }
     lexer_advance(lexer);
     lexer_skip_space(lexer);
 }
@@ -142,7 +144,7 @@ Token *lexer_get_next_token(Lexer *lexer) {
                 return lexer_advance_with_token(lexer,
                                                 token_init(T_DOT, lexer_get_current_char_as_str(lexer), lexer->line));
             default: {
-                _GSERR_s(lexer->e, lexer->line, "GS102 - Unsupported character '%c'", lexer->c);
+                _GSERR_s(lexer->e, lexer->line, errGS102, lexer->c);
                // printf("\n%d\n" ,lexer->c);
                 lexer_advance(lexer);
                 break;
@@ -160,7 +162,7 @@ Token *lexer_collect_str(Lexer *lexer) {
         char *s = lexer_get_current_char_as_str(lexer);
         char *tmp = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
         if(tmp) value = tmp; else {
-            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
             _terminate_gs(lexer->e);
         }
         strcat(value, s);
@@ -177,7 +179,7 @@ Token *lexer_collect_id(Lexer *lexer) {
         char *s = lexer_get_current_char_as_str(lexer);
         char *tmp = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
         if(tmp) value = tmp; else {
-            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
             _terminate_gs(lexer->e);
         }
         strcat(value, s);
@@ -194,13 +196,13 @@ Token *lexer_collect_num(Lexer *lexer) {
         if (lexer->c == '.')
             dc++;
         if (dc > 1) {
-            _GSERR_s(lexer->e, lexer->line, "GS602 - Invalid syntax for a number");
+            _GSERR_s(lexer->e, lexer->line, errGS602);
             _terminate_gs(lexer->e);
         }
         char *s = lexer_get_current_char_as_str(lexer);
         char *tmp = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
         if(tmp) value = tmp; else {
-            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
             _terminate_gs(lexer->e);
         }
         strcat(value, s);
@@ -224,7 +226,7 @@ Token *lexer_collect_eq(Lexer *lexer) {
         type = T_EE;
         char* tmp = realloc(value, 3 * sizeof(char));
         if(tmp) value = tmp; else {
-            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
             _terminate_gs(lexer->e);
         }
         value[0] = '=';
@@ -242,7 +244,7 @@ Token *lexer_collent_lt(Lexer *lexer) {
         type = T_LTE;
         char* tmp = realloc(value, 3 * sizeof(char));
         if(tmp) value = tmp; else {
-            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
             _terminate_gs(lexer->e);
         }
         value[0] = '<';
@@ -260,7 +262,7 @@ Token *lexer_collect_gt(Lexer *lexer) {
         type = T_GTE;
         char* tmp = realloc(value, 3 * sizeof(char));
         if(tmp) value = tmp; else {
-            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
             _terminate_gs(lexer->e);
         }
         value[0] = '>';
@@ -278,7 +280,7 @@ Token *lexer_collect_neq(Lexer *lexer) {
         type = T_NEQ;
         char* tmp = realloc(value, 3 * sizeof(char));
         if(tmp) value = tmp; else {
-            _GSERR_s(lexer->e, lexer->line, "GS.b.02 - Internal null pointer");
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
             _terminate_gs(lexer->e);
         }
         value[0] = '!';
