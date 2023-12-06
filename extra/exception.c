@@ -10,7 +10,7 @@ void _GSERR(unsigned line, char *description) {
     /*col(RED);
     printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\ngscript entry: (Line %d):\n", line);
     col(YEL);*/
-    printf(color(RED, "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\ngscript entry: (Line %d):\n"), line);
+    printf(color(RED, "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\ngscript \"entry.gs\": (Line %d):\n"), line);
     printf(color(YEL, "%s\n"), description);
     exit(1);
 
@@ -18,6 +18,7 @@ void _GSERR(unsigned line, char *description) {
 ErrorStack *errorstack_init() {
     ErrorStack *e = malloc(sizeof(ErrorStack));
     e->errors_size = 0;
+    e->curr_file = "entry.gs";
     return e;
 }
 void _GSERR_s(ErrorStack *e, unsigned line, char *description, ...) {
@@ -34,7 +35,7 @@ void _GSERR_s(ErrorStack *e, unsigned line, char *description, ...) {
         e->errors_size++;
         e->errors[e->errors_size-1] = calloc(150, sizeof(char));
         char d[100];
-        sprintf(d, color(RED, "gscript entry: (Line %d):\n")color(YEL,"%s\n"), line, desc_fmt);
+        sprintf(d, color(RED, "gscript: \"%s\" at line %d:\n")color(YEL,"%s\n"), e->curr_file, line, desc_fmt);
         strcpy(e->errors[e->errors_size-1], d);
     }
 }

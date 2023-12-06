@@ -19,12 +19,15 @@
 
 #define errGSb01 "GS.b.01 - Failed reading from entry input stream"
 #define errGSb02 "GS.b.02 - Internal null pointer"
-#define errGS101 "GS101 - Expected token type '%d' but received token '%s' (type %d)"
+#define errGS101 "GS.101 - Expected token '%s' but received token '%s' (type '%s')"
 #define errGS102 "GS.102 - Unsupported character %s"
 #define errGS103 "GS.103 - Expected '=' after '!'"
 #define errGS105 "GS.105 - Unrelated 'elsif' caught"
 #define errGS106 "GS.106 - Unrelated 'else' caught"
+#define errGS107 "GS.107 - Expected a string or macro expression after 'import'"
+#define errGS108 "GS.108 - Undefined macro expression '%s'"
 #define errGS201 "GS.201 - Uncaught statement of type %d"
+#define errGS202 "GS.202 - Expected condition expression"
 #define errGS301 "GS.301 - Undefined identifier %s"
 #define errGS302 "GS.302 - Variable '%s' already exists in the current scope"
 #define errGS303 "GS.303 - Variable '%s' does not exist in the current scope"
@@ -36,7 +39,7 @@
 #define errGS501 "GS.501 - No arguments provided where needed"
 #define errGS502 "GS.502 - Function '%s' does not take %d arguments"
 #define errGS503 "GS.503 - Function '%s' does not exist in the current scope"
-#define errGS504 "GS.504 - Illegal argument to function %s"
+#define errGS504 "GS.504 - Illegal argument to function '%s' (type '%s')"
 #define errGS505 "GS.505 - Function '%s' already exists in the current scope"
 #define errGS506 "GS.506 - Expected keyword 'param' for function parameters"
 #define errGS601 "GS.601 - Dividing by zero is illegal"
@@ -47,6 +50,7 @@
 typedef struct error_s {
     unsigned errors_size;
     char *errors[100];
+    char *curr_file;
 } ErrorStack;
 
 

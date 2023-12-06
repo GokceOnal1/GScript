@@ -143,7 +143,10 @@ Token *lexer_get_next_token(Lexer *lexer) {
             case '.':
                 return lexer_advance_with_token(lexer,
                                                 token_init(T_DOT, lexer_get_current_char_as_str(lexer), lexer->line));
-            default: {
+
+            case '#': {
+                return lexer_collect_pexpr(lexer);
+            } default: {
                 _GSERR_s(lexer->e, lexer->line, errGS102, lexer->c);
                // printf("\n%d\n" ,lexer->c);
                 lexer_advance(lexer);
@@ -289,6 +292,23 @@ Token *lexer_collect_neq(Lexer *lexer) {
     }
     //_GSERR(lexer->line, "GS104 - Expected '=' after '!'");
     return token_init(type, value, lexer->line);
+}
+Token *lexer_collect_pexpr(Lexer *lexer) {
+    lexer_advance(lexer);
+    char *value = calloc(1, sizeof(char));
+    value[0] = '\0';
+    while (isalnum(lexer->c)) {
+        char *s = lexer_get_current_char_as_str(lexer);
+        char *tmp = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
+            _terminate_gs(lexer->e);
+        }
+        strcat(value, s);
+        lexer_advance(lexer);
+    }
+    Token * t = token_init(T_PEXPR, value, lexer->line);
+    return t;
 }
 /*Returns given TOKEN and also advances C*/
 Token *lexer_advance_with_token(Lexer *lexer, Token *token) {

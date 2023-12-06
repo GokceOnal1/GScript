@@ -56,5 +56,10 @@ AST *ast_init(int type) {
     ast->objaccess_left = NULL;
     ast->objaccess_right = NULL;
     ast->obj_objdef = NULL;
+    ast->import_val = NULL;
+    ast->import_is_builtin = 0;
+    ast->obj_reassign_left = NULL;
+    ast->obj_reassign_right = NULL;
+    ast->func_def_file = NULL;
     return ast;
 }

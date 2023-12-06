@@ -7,7 +7,10 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <math.h>
 #include "../core/visitor.h"
+#include "../util/debug.h"
+
 AST *std_func_write(Visitor *visitor, AST **argv, int argc, unsigned line);
 AST *std_func_read(Visitor *visitor, AST **argv, int argc, unsigned line);
 AST *std_func_toupper(Visitor *visitor, AST **argv, int argc, unsigned line);
@@ -18,5 +21,6 @@ AST *std_func_len(Visitor *visitor, AST **argv, int argc, unsigned line);
 AST *std_func_strindx(Visitor *visitor, AST **argv, int argc, unsigned line);
 AST *std_func_listindx(Visitor *visitor, AST **argv, int argc, unsigned line);
 AST *std_func_listadd(Visitor *visitor, AST **argv, int argc, unsigned line);
+AST *get_builtin_func(Visitor *visitor, AST *node);
 
 #endif //GSCRIPT2_STDFUNC_H

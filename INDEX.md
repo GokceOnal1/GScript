@@ -1,11 +1,13 @@
 # GScript (version 2)
 ## Todo:
 Add support for reference parameters <br>
-Add standard functions for list handling <br>
+Revamp list indexing <br>
 Standardize error system <br>
-Add objects
-## Error Codes:
+Add classes <br>
+Add static typing <br>
 
+## Error Codes:
+(may be outdated)
 ```
 GS.b.01 - Failed reading from entry input stream
 GS.b.02 - Internal null pointer 
@@ -40,6 +42,6 @@ GS.603 - Operator '+' only supports num+num or str+str
 - [x] Variables
 - [x] Functions
 - [ ] Lists
-- [ ] Objects
+- [x] Objects
 - [ ] Classes
 - [x] Loops

@@ -1,5 +1,6 @@
 #include "stdfunc.h"
 #include "../core/visitor.h"
+char* ast_str_1[29] = { "variable definition", "function definition", "variable", "function call", "string", "compound statements", "no operation", "number", "binary operation", "boolean", "if statement", "repeat statement", "out statement", "skip statement", "variable reassignment", "while statement", "unary operation", "parameter", "return statement", "list", "list index", "object reference", "group", "object definition", "dot", "object access", "object", "import statement", "object reassignment"};
 AST *std_func_write(Visitor *visitor, AST **argv, int argc, unsigned line) {
     for (int i = 0; i < argc; i++) {
         AST *visited_ast = visitor_visit(visitor, argv[i]);
@@ -9,7 +10,7 @@ AST *std_func_write(Visitor *visitor, AST **argv, int argc, unsigned line) {
             // printast(visited_ast->type);
             //_GSERR(line, "GS504 - Illegal argument to function 'write'");
             _GSERR_s(visitor->e, line,
-                     "GS504 - Illegal argument to function 'write' (type %d)", visited_ast->type);
+                     errGS504, "write", ast_str_1[visited_ast->type]);
             return ast_init(AST_NOOP);
             //_terminate_gs(visitor->e);
         }
@@ -193,4 +194,42 @@ AST *std_func_listindx(Visitor *visitor, AST **argv, int argc, unsigned line) {
         return ast_init(AST_NOOP);
     }
     return list_var->list_contents[(unsigned)index->num_value];
+}
+AST *get_builtin_func(Visitor *visitor, AST *node) {
+    int argc = node->func_call_args_size;
+    AST ** argv = node->func_call_args;
+    //printf(" %s %s", node->func_call_name, visitor->e->curr_file);
+    if(strcmp(node->func_call_name, "__builtin_sin__") == 0 && strcmp(visitor->e->curr_file, "builtin_math.gs") == 0) {
+        AST * ast = ast_init(AST_NUM);
+        AST * v = visitor_visit(visitor, argv[0]);
+        ast->num_value = sin(v->num_value);
+        return ast;
+    } else if(strcmp(node->func_call_name, "__builtin_cos__") == 0 && strcmp(visitor->e->curr_file, "builtin_math.gs") == 0) {
+        AST * ast = ast_init(AST_NUM);
+        AST * v = visitor_visit(visitor, argv[0]);
+        ast->num_value = cos(v->num_value);
+        return ast;
+    } else if(strcmp(node->func_call_name, "__builtin_tan__") == 0 && strcmp(visitor->e->curr_file, "builtin_math.gs") == 0) {
+        AST * ast = ast_init(AST_NUM);
+        AST * v = visitor_visit(visitor, argv[0]);
+        ast->num_value = tan(v->num_value);
+        return ast;
+    } else if(strcmp(node->func_call_name, "__builtin_sqrt__") == 0 && strcmp(visitor->e->curr_file, "builtin_math.gs") == 0) {
+        AST * ast = ast_init(AST_NUM);
+        AST * v = visitor_visit(visitor, argv[0]);
+        ast->num_value = sqrt(v->num_value);
+        return ast;
+    } else if(strcmp(node->func_call_name, "__builtin_root__") == 0 && strcmp(visitor->e->curr_file, "builtin_math.gs") == 0) {
+        AST * ast = ast_init(AST_NUM);
+        AST * v = visitor_visit(visitor, argv[0]);
+        AST * v2 = visitor_visit(visitor, argv[1]);
+        ast->num_value = round(pow((int)(v->num_value), (1.0 / (int)(v2->num_value))));
+        return ast;
+    }  else if(strcmp(node->func_call_name, "__builtin_pow__") == 0 && strcmp(visitor->e->curr_file, "builtin_math.gs") == 0) {
+        AST *ast = ast_init(AST_NUM);
+        AST *v = visitor_visit(visitor, argv[0]);
+        AST *v2 = visitor_visit(visitor, argv[1]);
+        ast->num_value = pow(v->num_value, v2->num_value);
+        return ast;
+    } else return NULL;
 }

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-Scope *scope_init(Scope *parent, ErrorStack *errorstack) {
+Scope *scope_init(Scope *parent, ErrorStack *errorstack) {//printf("making scope");
     Scope *scope = calloc(1, sizeof(Scope));
     scope->parent = parent;
     scope->func_defs = (void *)0;
@@ -38,6 +38,7 @@ AST *scope_get_function_definition(Scope *scope, const char *fname) {
         }
         scope = scope->parent;
     }
+
     return NULL;
 }
 
@@ -64,7 +65,7 @@ AST *scope_get_var_def(Scope *scope, const char *vname) {
     while (scope != NULL) {
         for (int i = 0; i < scope->var_defs_size; i++) {
             AST *var_def = scope->var_defs[i];
-            //printf("\n%d: var in scope: %s", i, var_def->var_def_var_name);
+           // printf("\n%d: var in scope: %s", i, var_def->var_def_var_name);
             if (strcmp(var_def->var_def_var_name, vname) == 0) {
                //   printf("\nvar: %f ", var_def->var_def_value->num_value);
                 return var_def->var_def_value;

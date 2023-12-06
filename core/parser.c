@@ -2,6 +2,7 @@
 
 
 /* Functions for parsing input */
+char* toks[32] = { "identifier", "=", "string", ";", "(", ")", "{", "}", "$", ",", "end of file", "number", "+", "-", "*", "/", "<", ">", "==", "<=", ">=", "!=", "&", "|", "%", "!", "[", "]", ":", "~", ".", "macro expression" };
 
 /*init for parser*/
 Parser *parser_init(Lexer *lexer) {
@@ -21,8 +22,8 @@ void parser_eat(Parser *parser, int token_type) {
     } else {
         _GSERR_s(parser->e, parser->current_token->line,
                  errGS101,
-                 token_type, parser->current_token->value,
-                 parser->current_token->type);
+                 toks[token_type], parser->current_token->value,
+                 toks[parser->current_token->type]);
         _terminate_gs(parser->e);
         // exit(1);
     }
@@ -129,30 +130,7 @@ AST *parser_parse_comp_term(Parser *parser, Scope *scope) {
 }
 AST *parser_parse_factor(Parser *parser, Scope *scope) {
     AST *ast_left = parser_parse_obj_access(parser, scope);
-    /*AST *objacc = ast_init(AST_OBJACCESS);
-    unsigned i = 0;
-    if(parser->current_token->type == T_DOT) {
-        while (1) {
-            if(i == 0) {
-                objacc->objaccess_names = malloc(sizeof(AST*));
-                objacc->objaccess_names_size++;
-                objacc->objaccess_names[objacc->objaccess_names_size-1] = ast_left;
 
-            } else {
-                objacc->objaccess_names_size++;
-                AST **temp = realloc(objacc->objaccess_names, objacc->objaccess_names_size * sizeof(AST *));
-                if (temp) objacc->objaccess_names = temp; else _GSERR_s(parser->e, parser->current_token->line, errGSb02);
-
-                objacc->objaccess_names[objacc->objaccess_names_size - 1] = parser_parse_id(parser, scope);
-                if(parser->current_token->type != T_DOT) break;
-            }
-            parser_eat(parser, T_DOT);
-            i++;
-            // ast_left = list_access;
-        }
-    }
-    if(i == 0) return ast_left;
-    else return objacc;*/
     return ast_left;
 }
 AST *parser_parse_mono(Parser *parser, Scope *scope) {
@@ -295,6 +273,8 @@ AST *parser_parse_id(Parser *parser, Scope *scope) {
         return NULL;
     } else if (strcmp(parser->current_token->value, "obj") == 0) {
         return parser_parse_obj(parser, scope);
+    } else if(strcmp(parser->current_token->value, "import") == 0) {
+        return parser_parse_import(parser, scope);
     } else if ((strcmp(parser->current_token->value, "true") == 0) ||
                (strcmp(parser->current_token->value, "false") == 0)) {
 
@@ -310,7 +290,9 @@ AST *parser_parse_id(Parser *parser, Scope *scope) {
     }
 }
 AST *parser_parse_num(Parser *parser, Scope *scope) {
+   // printf("%s\n", parser->current_token->value);
     double value = strtod(parser->current_token->value, NULL);
+   // printf("%lf\n", value);
     parser_eat(parser, T_NUM);
     AST *ast = ast_init(AST_NUM);
     ast->num_value = value;
@@ -346,6 +328,7 @@ AST *parser_parse_variable_definition(Parser *parser, Scope *scope) {
  * information*/
 AST *parser_parse_function_definition(Parser *parser, Scope *scope) {
     AST *ast = ast_init(AST_FUNC_DEF);
+    ast->func_def_file = parser->e->curr_file;
     parser_eat(parser, T_ID);
     char *func_name = parser->current_token->value;
     ast->line = parser->current_token->line;
@@ -570,11 +553,28 @@ AST *parser_parse_obj_access(Parser *parser, Scope *scope) {
     AST *obj = parser_parse_mono(parser, scope);
     while(parser->current_token->type == T_DOT) {
         parser_eat(parser, T_DOT);
-        AST *member = parser_parse_mono(parser, scope);
+        char *name = parser->current_token->value;
+        parser_eat(parser, T_ID);
+        AST *memb = ast_init(AST_VAR);
+        memb->line = parser->previous_token->line;
+        memb->var_name = name;
+        memb->scope = scope;
+        if(parser->current_token->type == T_LPR) {
+            memb = parser_parse_function_call(parser, scope);
+        }
+
         AST *full = ast_init(AST_OBJACCESS);
         full->objaccess_left = obj;
-        full->objaccess_right = member;
+        full->objaccess_right = memb;
         obj = full;
+    }
+    if(parser->current_token->type == T_EQL) {
+        AST *obj_r = ast_init(AST_OBJ_REASSIGN);
+        obj_r->obj_reassign_left = obj;
+        obj_r->line = parser->current_token->line;
+        parser_eat(parser, T_EQL);
+        obj_r->obj_reassign_right = parser_parse_comp_expr(parser, scope);
+        return obj_r;
     }
     return obj;
 }
@@ -594,5 +594,26 @@ AST *parser_parse_field_or_method(Parser *parser, Scope *scope) {
     } else {
         _GSERR_s(parser->e, parser->current_token->line, errGS304);
     }
-    return NULL;
+    return ast_init(AST_NOOP);
+}
+AST *parser_parse_import(Parser *parser, Scope *scope) {
+    parser_eat(parser, T_ID);
+    AST *imp = ast_init(AST_IMPORT);
+    if(parser->current_token->type == T_PEXPR) {
+        if(strcmp(parser->current_token->value, "math") == 0) {
+            imp->import_val = "builtin_math.gs";
+            imp->import_is_builtin = 1;
+        } else {
+            _GSERR_s(parser->e, parser->current_token->line, errGS108, parser->current_token->value);
+            return ast_init(AST_NOOP);
+        }
+        parser_eat(parser, T_PEXPR);
+    } else if (parser->current_token->type == T_STR) {
+        imp->import_val = parser->current_token->value;
+        parser_eat(parser, T_STR);
+    } else {
+        _GSERR_s(parser->e, parser->current_token->line, errGS107);
+        return ast_init(AST_NOOP);
+    }
+    return imp;
 }

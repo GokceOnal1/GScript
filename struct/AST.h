@@ -2,7 +2,7 @@
 #define GSCRIPT2_AST_H
 #include <stdlib.h>
 typedef struct AST_s {
-    enum { AST_VAR_DEF, AST_FUNC_DEF, AST_VAR, AST_FUNC_CALL, AST_STR, AST_COMPOUND, AST_NOOP, AST_NUM, AST_BINOP, AST_BOOL, AST_IF, AST_REPEAT, AST_OUT, AST_SKIP, AST_REASSIGN, AST_WHILE, AST_UNOP, AST_PARAM, AST_RETURN, AST_LIST, AST_LISTINDX, AST_OBJREF, AST_GROUP, AST_OBJ_DEF, AST_DOT, AST_OBJACCESS, AST_OBJ } type;
+    enum { AST_VAR_DEF, AST_FUNC_DEF, AST_VAR, AST_FUNC_CALL, AST_STR, AST_COMPOUND, AST_NOOP, AST_NUM, AST_BINOP, AST_BOOL, AST_IF, AST_REPEAT, AST_OUT, AST_SKIP, AST_REASSIGN, AST_WHILE, AST_UNOP, AST_PARAM, AST_RETURN, AST_LIST, AST_LISTINDX, AST_OBJREF, AST_GROUP, AST_OBJ_DEF, AST_DOT, AST_OBJACCESS, AST_OBJ, AST_IMPORT, AST_OBJ_REASSIGN } type;
     struct scope_s* scope;
     unsigned int line;
 
@@ -15,6 +15,7 @@ typedef struct AST_s {
     char *func_def_name;
     struct AST_s** func_def_args;
     size_t func_def_args_size;
+    char *func_def_file;
 
     //AST_VAR
     char* var_name;
@@ -105,6 +106,14 @@ typedef struct AST_s {
 
     //AST_OBJ
     struct AST_s *obj_objdef;
+
+    //AST_IMPORT
+    char *import_val;
+    unsigned import_is_builtin;
+
+    //AST_OBJ_REASSIGN
+    struct AST_s *obj_reassign_left;
+    struct AST_s *obj_reassign_right;
 
 } AST;
 

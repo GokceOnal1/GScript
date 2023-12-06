@@ -6,9 +6,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include "scope.h"
+#include "lexer.h"
+#include "visitor.h"
 #include "../extra/exception.h"
 #include "../struct/token.h"
 #include "../util/debug.h"
+#include "../util/io.h"
 
 
 typedef struct visitor_s {
@@ -34,9 +37,12 @@ AST *visitor_visit_repeat_statement(Visitor *visitor, AST *node);
 AST *visitor_visit_while_statement(Visitor *visitor, AST *node);
 AST *visitor_visit_unop(Visitor *visitor, AST *node);
 AST* visitor_visit_listindx(Visitor *visitor, AST *node);
-AST *visitor_visit_compound(Visitor *visitor, AST *node);
+AST *visitor_visit_compound(Visitor *visitor, AST *node, unsigned change_scope);
 AST *visitor_visit_obj_def(Visitor *visitor, AST *node);
 AST *visitor_visit_objaccess(Visitor *visitor, AST *node);
 AST *visitor_convert_to_str(Visitor *visitor, AST *node);
+AST *visitor_visit_obj_reassign(Visitor *visitor, AST *node);
+char *visitor_scope_to_objacc(Visitor *visitor, AST *node);
+AST *visitor_visit_import(Visitor *visitor, AST *node);
 
 #endif //GSCRIPT2_VISITOR_H

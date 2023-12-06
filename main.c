@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     Visitor *visitor = visitor_init(parser->e);
 
     visitor_visit(visitor, root);
-    printf(color(BLU, "Program terminated with %d errors"), error_stack->errors_size);
+    printf(color(BLU, "Program terminated with %d error(s)"), error_stack->errors_size);
     _print_err(error_stack);
     //printf(WHT);
     return 0;

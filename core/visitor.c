@@ -4,10 +4,11 @@
 
 #include "visitor.h"
 #include "../extra/stdfunc.h"
+#include "parser.h"
 
 #define _MAXLINE 1000
 #define __err(fmt, ...) _GSERR_s(visitor->e, line, fmt, __VA_ARGS__)
-
+char* ast_str[29] = { "variable definition", "function definition", "variable", "function call", "string", "compound statements", "no operation", "number", "binary operation", "boolean", "if statement", "repeat statement", "out statement", "skip statement", "variable reassignment", "while statement", "unary operation", "parameter", "return statement", "list", "list index", "object reference", "group", "object definition", "dot", "object access", "object", "import statement", "object reassignment"};
 /*Constructs a new visitor*/
 Visitor *visitor_init(ErrorStack *errorstack) {
     Visitor *visitor = calloc(1, sizeof(Visitor));
@@ -66,6 +67,7 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
             return node;
             break;
         case AST_RETURN:
+           // printf("at return file is %s ", visitor->e->curr_file);
             return node;
         case AST_UNOP:
             return visitor_visit_unop(visitor, node);
@@ -80,8 +82,14 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
             return visitor_visit_objaccess(visitor, node);
         }
         case AST_OBJ: return node;
+        case AST_OBJ_REASSIGN: {
+            return visitor_visit_obj_reassign(visitor, node);
+        }
+        case AST_IMPORT: {
+            return visitor_visit_import(visitor, node);
+        }
         case AST_COMPOUND:
-            return visitor_visit_compound(visitor, node);
+            return visitor_visit_compound(visitor, node, 1);
             break;
         case AST_NOOP:
             return node;
@@ -111,6 +119,7 @@ AST *visitor_visit_var_reassign(Visitor *visitor, AST *node) {
     return node;
 }
 AST* visitor_visit_func_def(Visitor *visitor, AST* node) {
+   // printf("here");
     node->scope->parent = visitor->current_scope;
     visitor->current_scope = scope_init(visitor->current_scope, visitor->e);
     for(int i = 0; i < node->func_def_args_size; i++) {
@@ -123,19 +132,13 @@ AST* visitor_visit_func_def(Visitor *visitor, AST* node) {
 }
 /*Tells the visitor to interpret a variable value and store it to memory*/
 AST *visitor_visit_var(Visitor *visitor, AST *node) {
-    if(strcmp(node->var_name, "pi") == 0) {
-        AST* result = ast_init(AST_NUM);
-        result->num_value = 3.1415926535898;
-        return result;
-    }
     /*for(int p = 0; p < visitor->current_scope->parent->var_defs_size; p++) {
         printf(" ()in var def: %s ", visitor->current_scope->parent->var_defs[p]->var_def_var_name);
     }*/
     AST* val = scope_get_var_def(visitor->current_scope, node->var_name);
     if(val == NULL) {
-        char d[100];
-        sprintf(d, "GS303 - Variable '%s' does not exist in the current scope", node->var_name);
-        _GSERR_s(visitor->e, node->line, d);
+        _GSERR_s(visitor->e, node->line, errGS303, node->var_name);
+        return ast_init(AST_NOOP);
     } else {
         return val;
     }
@@ -143,6 +146,9 @@ AST *visitor_visit_var(Visitor *visitor, AST *node) {
 /*Tells the visitor to interpret a function call and execute it*/
 AST *visitor_visit_func_call(Visitor *visitor, AST *node, Scope *calledfrom) {
 //  if(node->should_break) {printf("RETURN") ; exit(1);}
+//printf("%s", node->func_call_name);
+    AST *builtin = get_builtin_func(visitor, node);
+    if(builtin != NULL) return builtin;
     if (strcmp(node->func_call_name, "write") == 0) {
         return std_func_write(visitor, node->func_call_args,
                               node->func_call_args_size, node->line);
@@ -178,6 +184,10 @@ AST *visitor_visit_func_call(Visitor *visitor, AST *node, Scope *calledfrom) {
     AST* fdef = scope_get_function_definition(visitor->current_scope, node->func_call_name);
     if(fdef != NULL) {
      //   printf("here");
+        if(node->func_call_args_size != fdef->func_def_args_size) {
+            _GSERR_s(visitor->e, node->line, errGS502, node->func_call_name, node->func_call_args_size);
+            return ast_init(AST_NOOP);
+        }
         Scope* prev = visitor->current_scope;
         if(calledfrom != NULL) {prev = calledfrom; /*printf("Calledfrom not null");*/ }
         visitor->current_scope = fdef->scope;
@@ -206,10 +216,16 @@ AST *visitor_visit_func_call(Visitor *visitor, AST *node, Scope *calledfrom) {
             printf(" in func def %s ", visitor->current_scope->var_defs[p]->var_def_var_name);
         }*/
        // printf("body type: %d ", fdef->func_def_body->type);
+        char *orig_file = visitor->e->curr_file;
+        visitor->e->curr_file = fdef->func_def_file;
         res = visitor_visit(visitor, fdef->func_def_body);
+        visitor->e->curr_file = orig_file;
         AST* returned = NULL;
         if(res->return_value) {
+            char *orig_file = visitor->e->curr_file;
+            visitor->e->curr_file = fdef->func_def_file;
             returned = visitor_visit(visitor, res->return_value);
+            visitor->e->curr_file = orig_file;
         } else {
             returned = ast_init(AST_NOOP);
         }
@@ -223,7 +239,8 @@ AST *visitor_visit_func_call(Visitor *visitor, AST *node, Scope *calledfrom) {
 //    if(res->should_return) exit(1);
         return returned;
     }
-    _GSERR_s(visitor->e, node->line, errGS503);
+    //printf("at error, file is %s", visitor->e->curr_file);
+    _GSERR_s(visitor->e, node->line, errGS503, node->func_call_name);
     _terminate_gs(visitor->e);
 }
 /*Tells the visitor to interpret a string AST node*/
@@ -355,7 +372,10 @@ AST *visitor_visit_bool(Visitor *visitor, AST *node) {
 AST *visitor_visit_if_statement(Visitor *visitor, AST *node) {
     for(int i = 0; i < node->if_conds_size; i++) {
         AST* cond = visitor_visit(visitor, node->if_conds[i]);
-        if(cond->type != AST_BOOL) printf("Expected conditional expression");
+        if(cond->type != AST_BOOL) {
+            _GSERR_s(visitor->e, node->line, errGS202);
+            _terminate_gs(visitor->e);
+        }
         if(cond->b_value) {
             AST* res = visitor_visit(visitor, node->if_bodies[i]);
             return res;
@@ -557,7 +577,6 @@ AST *visitor_visit_objaccess(Visitor *visitor, AST *node) {
                if (node->objaccess_right->type == AST_OBJACCESS) {
                    return visitor_visit_objaccess(visitor, node->right);
                } else {
-                   // printf("%d", member->type);
                    return member;
                }
            } else {
@@ -587,9 +606,72 @@ AST *visitor_visit_objaccess(Visitor *visitor, AST *node) {
        return ast_init(AST_NOOP);
    }
 }
-AST *visitor_visit_compound(Visitor *visitor, AST *node) {
+AST *visitor_visit_obj_reassign(Visitor *visitor, AST *node) {
+    Scope *origin = visitor->current_scope;
+    AST *val = visitor_visit(visitor, node->obj_reassign_right); //edit to see if right is valid
+
+    char *name = visitor_scope_to_objacc(visitor, node->obj_reassign_left);
+
+    AST* newval = ast_init(AST_VAR_DEF);
+    newval->var_def_var_name = name;
+    newval->var_def_value = val;
+
+    scope_set_var(visitor->current_scope, newval);
+    visitor->current_scope = origin;
+    return ast_init(AST_NOOP);
+}
+char *visitor_scope_to_objacc(Visitor *visitor, AST *node) {
+    AST *main_obj = node->objaccess_left;
+    AST *v_main_obj = visitor_visit(visitor, main_obj);
+    if(v_main_obj->type == AST_OBJ) {
+        // printf("here");
+        AST *odef = v_main_obj->obj_objdef;
+        if (node->objaccess_right->type == AST_VAR) {
+            char *member_name = node->objaccess_right->var_name;
+            // printf(" %s ", member_name);
+            AST *member = scope_get_var_def(odef->scope, (const char *) member_name);
+            if (member != NULL) {
+                visitor->current_scope = odef->scope;
+                if (node->objaccess_right->type == AST_OBJACCESS) {
+                    visitor_scope_to_objacc(visitor, node->right);
+                } else {
+                    // printf("%d", member->type);
+                    return member_name;
+                }
+            } else {
+                _GSERR_s(visitor->e, node->line, errGS403, member_name, odef->obj_name); //!line
+                return ast_init(AST_NOOP);
+            }
+        } else {
+            printf("illegal for obj reassignment");
+        }
+    }
+}
+AST *visitor_visit_import(Visitor *visitor, AST *node) {
+    char * filepath = calloc(100, sizeof(char));
+    filepath[99] = '\0';
+    if(node->import_is_builtin) {
+        strcat(filepath, "../gs-libs/");
+        strcat(filepath, node->import_val);
+    } else {
+        strcat(filepath, "../gs-entry/");
+        strcat(filepath, node->import_val);
+    }
+    Lexer *l = lexer_init(get_file_data(filepath));
+    char * origin = visitor->e->curr_file;
+    l->e = visitor->e;
+    l->e->curr_file = node->import_val;
+    Parser *p = parser_init(l);
+    AST* root = parser_parse(p, p->scope);
+    visitor_visit_compound(visitor, root, 0);
+    visitor->e->curr_file = origin;
+    return ast_init(AST_NOOP);
+}
+AST *visitor_visit_compound(Visitor *visitor, AST *node, unsigned change_scope) {
     Scope* compound_scope = scope_init(visitor->current_scope, visitor->e);
-    visitor->current_scope = compound_scope;
+    if(change_scope) {
+        visitor->current_scope = compound_scope;
+    }
     for (int i = 0; i < node->compound_size; i++) {
         //printf(" in compound: %d ", node->compound_value[i]->type);
        /* for(int p = 0; p < visitor->current_scope->parent->var_defs_size; p++) {
@@ -600,7 +682,10 @@ AST *visitor_visit_compound(Visitor *visitor, AST *node) {
         if(stat->should_return || stat->should_break) return stat;
     }
   //  printf("done with comp");
-    visitor->current_scope = compound_scope->parent;
+  if(change_scope) {
+      visitor->current_scope = compound_scope->parent;
+  }
+
   //  free(compound_scope);
     return node;
 }

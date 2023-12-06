@@ -28,3 +28,6 @@ repeat(4) {
 
     i = i + 1;
 };
+
+import #std;
+
