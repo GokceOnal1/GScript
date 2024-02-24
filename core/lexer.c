@@ -125,9 +125,7 @@ Token *lexer_get_next_token(Lexer *lexer) {
                         lexer, token_init(T_PLUS, lexer_get_current_char_as_str(lexer),
                                           lexer->line));
             case '-':
-                return lexer_advance_with_token(
-                        lexer,
-                        token_init(T_MIN, lexer_get_current_char_as_str(lexer), lexer->line));
+                return lexer_collect_arrow(lexer);
             case '*':
                 return lexer_advance_with_token(
                         lexer,
@@ -161,7 +159,7 @@ Token *lexer_collect_str(Lexer *lexer) {
     lexer_advance(lexer);
     char *value = calloc(2, sizeof(char));
     value[0] = '\0';
-    while (lexer->c != '"') {
+    while (lexer->c != '"' && lexer->c != '\0') {
         char *s = lexer_get_current_char_as_str(lexer);
         char *tmp = realloc(value, (strlen(value) + strlen(s) + 1) * sizeof(char));
         if(tmp) value = tmp; else {
@@ -309,6 +307,24 @@ Token *lexer_collect_pexpr(Lexer *lexer) {
     }
     Token * t = token_init(T_PEXPR, value, lexer->line);
     return t;
+}
+Token *lexer_collect_arrow(Lexer *lexer) {
+    int type = T_MIN;
+    char *value = lexer_get_current_char_as_str(lexer);
+    lexer_advance(lexer);
+    if(lexer->c == '>') {
+        lexer_advance(lexer);
+        type = T_ARROW;
+        char* tmp = realloc(value, 3 * sizeof(char));
+        if(tmp) value = tmp; else {
+            _GSERR_s(lexer->e, lexer->line, errGSb02);
+            _terminate_gs(lexer->e);
+        }
+        value[0] = '-';
+        value[1] = '>';
+        value[2] = '\0';
+    }
+    return token_init(type, value, lexer->line);
 }
 /*Returns given TOKEN and also advances C*/
 Token *lexer_advance_with_token(Lexer *lexer, Token *token) {

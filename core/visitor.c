@@ -8,7 +8,7 @@
 
 #define _MAXLINE 1000
 #define __err(fmt, ...) _GSERR_s(visitor->e, line, fmt, __VA_ARGS__)
-char* ast_str[29] = { "variable definition", "function definition", "variable", "function call", "string", "compound statements", "no operation", "number", "binary operation", "boolean", "if statement", "repeat statement", "out statement", "skip statement", "variable reassignment", "while statement", "unary operation", "parameter", "return statement", "list", "list index", "object reference", "group", "object definition", "dot", "object access", "object", "import statement", "object reassignment"};
+char* ast_str[31] = { "variable definition", "function definition", "variable", "function call", "string", "compound statements", "no operation", "number", "binary operation", "boolean", "if statement", "repeat statement", "out statement", "skip statement", "variable reassignment", "while statement", "unary operation", "parameter", "return statement", "list", "list index", "object reference", "group", "object definition", "dot", "object access", "object", "import statement", "object reassignment", "list arrow", "list reassignment"};
 /*Constructs a new visitor*/
 Visitor *visitor_init(ErrorStack *errorstack) {
     Visitor *visitor = calloc(1, sizeof(Visitor));
@@ -85,8 +85,15 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
         case AST_OBJ_REASSIGN: {
             return visitor_visit_obj_reassign(visitor, node);
         }
+        case AST_LIST_REASSIGN : {
+            //printf("visiting");
+            return visitor_visit_list_reassign(visitor, node);
+        }
         case AST_IMPORT: {
             return visitor_visit_import(visitor, node);
+        }
+        case AST_LIST_ARROW: {
+            return visitor_visit_list_arrow(visitor, node);
         }
         case AST_COMPOUND:
             return visitor_visit_compound(visitor, node, 1);
@@ -95,7 +102,7 @@ AST *visitor_visit(Visitor *visitor, AST *node) {
             return node;
             break;
     }
-    _GSERR_s(visitor->e, node->line, errGS201);
+    _GSERR_s(visitor->e, node->line, errGS201, node->type);
     _terminate_gs(visitor->e);
 }
 /*Tells the visitor to interpret a variable definition and store it to memory*/
@@ -606,6 +613,42 @@ AST *visitor_visit_objaccess(Visitor *visitor, AST *node) {
        return ast_init(AST_NOOP);
    }
 }
+AST *visitor_visit_list_arrow(Visitor *visitor, AST *node) {
+//    printf("node type at start: %s\n", ast_str[node->type]);
+   // printf("node left at start: %s\n", ast_str[node->list_arrow_left->type]);
+   // printf("node right at start: %s\n", ast_str[node->list_arrow_right->type]);
+    AST *main_list = node->list_arrow_left;
+    AST *v_main_list = visitor_visit(visitor, main_list);
+    if(v_main_list->type == AST_LIST) { //or maybe ast var idk
+        AST* right_side = node->list_arrow_right;
+        if(right_side->type != AST_LIST_ARROW) right_side = visitor_visit(visitor, node->list_arrow_right);
+      //  printf("\n%s", ast_str[node->list_arrow_right->type]);
+        if(right_side->type == AST_LIST_ARROW) {
+           // printf(" left: %f , right: %f \n", right_side->list_arrow_left->num_value, right_side->list_arrow_right->num_value);
+            AST* new_list_arrow = ast_init(AST_LIST_ARROW);
+            AST* prelim_index = visitor_visit(visitor, right_side->list_arrow_left);
+
+            if(prelim_index->type != AST_NUM) {
+                _GSERR_s(visitor->e, node->line, errGS305, ast_str[prelim_index->type]);
+                return ast_init(AST_NOOP);
+            }
+            new_list_arrow->list_arrow_left = v_main_list->list_contents[(unsigned int)prelim_index->num_value];
+           // printf("ok: %s \n", ast_str[new_list_arrow->left->type]);
+            new_list_arrow->list_arrow_right = right_side->list_arrow_right;
+          //  printf("bruh");
+           // printf("at end: %s", ast_str[new_list_arrow->list_arrow_left->type]);
+            return visitor_visit_list_arrow(visitor, new_list_arrow);
+        } else if(right_side->type == AST_NUM){
+            return visitor_visit(visitor, v_main_list->list_contents[(unsigned int)right_side->num_value]);
+        } else {
+            _GSERR_s(visitor->e, right_side->line, errGS305, ast_str[right_side->type]);
+            return ast_init(AST_NOOP);
+        }
+    } else {
+        _GSERR_s(visitor->e, node->line, errGS111, ast_str[v_main_list->type]);
+        return ast_init(AST_NOOP);
+    }
+}
 AST *visitor_visit_obj_reassign(Visitor *visitor, AST *node) {
     Scope *origin = visitor->current_scope;
     AST *val = visitor_visit(visitor, node->obj_reassign_right); //edit to see if right is valid
@@ -619,6 +662,49 @@ AST *visitor_visit_obj_reassign(Visitor *visitor, AST *node) {
     scope_set_var(visitor->current_scope, newval);
     visitor->current_scope = origin;
     return ast_init(AST_NOOP);
+}
+AST *visitor_visit_list_reassign(Visitor *visitor, AST *node) {
+
+    AST *curr = node->list_reassign_left->list_arrow_right;
+    AST *v_main_list = visitor_visit(visitor, node->list_reassign_left->list_arrow_left); //check if its a list
+    AST *newval = visitor_visit(visitor, node->list_reassign_right);
+    //printf(" TYPE OF LIST ARR RIGHT: %s, %f\n", ast_str[curr->type], curr->num_value);
+    //printf(" TYPE OF LIST ARR LEFT: %s, %f\n", ast_str[v_main_list->type], v_main_list->num_value);
+    while(curr->type == AST_LIST_ARROW) {
+        //printf(" in loop ");
+        AST* new_list_arrow = ast_init(AST_LIST_ARROW);
+        AST* prelim_index = visitor_visit(visitor, curr->list_arrow_left);
+
+        if(prelim_index->type != AST_NUM) {
+            _GSERR_s(visitor->e, node->line, errGS305, ast_str[prelim_index->type]);
+            return ast_init(AST_NOOP);
+        }
+        new_list_arrow->list_arrow_left = v_main_list->list_contents[(unsigned int)prelim_index->num_value];
+        // printf("ok: %s \n", ast_str[new_list_arrow->left->type]);
+        new_list_arrow->list_arrow_right = curr->list_arrow_right;
+        curr = new_list_arrow;
+        if(curr->list_arrow_right->type != AST_LIST_ARROW) {
+            AST *f_index = visitor_visit(visitor, curr->list_arrow_right);
+            if(f_index->type != AST_NUM) {
+                _GSERR_s(visitor->e, f_index->line, errGS305, ast_str[f_index->type]);
+                return ast_init(AST_NOOP);
+            }
+            curr->list_arrow_left->list_contents[(unsigned int)f_index->num_value] = newval;
+            return ast_init(AST_NOOP);
+        }
+    }
+    //printf("here");
+    //printf("  %s  ", ast_str[node->list_reassign_left->list_arrow_left->type]);
+    curr = visitor_visit(visitor, curr);
+    if(curr->type != AST_NUM) {
+        _GSERR_s(visitor->e, curr->line, errGS305, ast_str[curr->type]);
+        return ast_init(AST_NOOP);
+    }
+    AST* list = visitor_visit(visitor, node->list_reassign_left->list_arrow_left);
+    list->list_contents[(unsigned int)curr->num_value] = newval;
+    //add way to change value of list
+    return ast_init(AST_NOOP);
+
 }
 char *visitor_scope_to_objacc(Visitor *visitor, AST *node) {
     AST *main_obj = node->objaccess_left;
@@ -650,6 +736,14 @@ char *visitor_scope_to_objacc(Visitor *visitor, AST *node) {
 AST *visitor_visit_import(Visitor *visitor, AST *node) {
     char * filepath = calloc(100, sizeof(char));
     filepath[99] = '\0';
+    if(strcmp(node->import_val, "entry.gs") == 0) {
+        _GSERR_s(visitor->e, node->line, errGS109);
+        return ast_init(AST_NOOP);
+    }
+    if(strcmp(node->import_val, visitor->e->curr_file) == 0) {
+        _GSERR_s(visitor->e, node->line, errGS110, node->import_val, node->import_val);
+        return ast_init(AST_NOOP);
+    }
     if(node->import_is_builtin) {
         strcat(filepath, "../gs-libs/");
         strcat(filepath, node->import_val);

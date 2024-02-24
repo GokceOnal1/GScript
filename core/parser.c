@@ -2,7 +2,7 @@
 
 
 /* Functions for parsing input */
-char* toks[32] = { "identifier", "=", "string", ";", "(", ")", "{", "}", "$", ",", "end of file", "number", "+", "-", "*", "/", "<", ">", "==", "<=", ">=", "!=", "&", "|", "%", "!", "[", "]", ":", "~", ".", "macro expression" };
+char* toks[32] = { "identifier", "=", "string", ";", "(", ")", "{", "}", "$", ",", "end of file", "number", "+", "-", "*", "/", "<", ">", "==", "<=", ">=", "!=", "&", "|", "%", "!", "[", "]", ":", "~", ".", "macro expression", "->" };
 
 /*init for parser*/
 Parser *parser_init(Lexer *lexer) {
@@ -551,6 +551,13 @@ AST *parser_parse_obj(Parser *parser, Scope *scope) {
 AST *parser_parse_obj_access(Parser *parser, Scope *scope) {
     //Set left to obj, right to the rest, then the whole thing back to obj iteratively
     AST *obj = parser_parse_mono(parser, scope);
+    //detected list access
+    if(parser->current_token->type == T_ARROW) {
+        return parser_parse_list_arrow(obj, parser, scope);
+    }
+    if(parser->current_token->type != T_DOT) {
+        return obj;
+    }
     while(parser->current_token->type == T_DOT) {
         parser_eat(parser, T_DOT);
         char *name = parser->current_token->value;
@@ -616,4 +623,41 @@ AST *parser_parse_import(Parser *parser, Scope *scope) {
         return ast_init(AST_NOOP);
     }
     return imp;
+}
+AST *parser_parse_list_arrow(AST* initial, Parser *parser, Scope *scope) {
+    AST *combined = initial;
+    while(parser->current_token->type == T_ARROW) {
+        parser_eat(parser, T_ARROW);
+        AST* index = NULL;
+        if(parser->current_token->type == T_NUM) {
+            index = parser_parse_num(parser, scope);
+        } else if(parser->current_token->type == T_ID) {
+            char* name = parser->current_token->value;
+            index = ast_init(AST_VAR);
+            index->var_name = name;
+            index->line = parser->current_token->line;
+            index->scope = scope;
+            parser_eat(parser, T_ID);
+            if(parser->current_token->type == T_LPR) {
+                index = parser_parse_function_call(parser, scope);
+            }
+        } else {
+            _GSERR_s(parser->e, parser->current_token->line, errGS305);
+            return ast_init(AST_NOOP);
+        }
+
+        AST *full = ast_init(AST_LIST_ARROW);
+        full->list_arrow_left = combined;
+        full->list_arrow_right = index;
+        combined = full;
+    }
+    if(parser->current_token->type == T_EQL) {
+        AST *list_r = ast_init(AST_LIST_REASSIGN);
+        list_r->list_reassign_left = combined;
+        list_r->line = parser->current_token->line;
+        parser_eat(parser, T_EQL);
+        list_r->list_reassign_right = parser_parse_comp_expr(parser, scope);
+        return list_r;
+    }
+    return combined;
 }

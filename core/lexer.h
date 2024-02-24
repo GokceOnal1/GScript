@@ -30,6 +30,7 @@ Token *lexer_collent_lt(Lexer *lexer);
 Token *lexer_collect_gt(Lexer *lexer);
 Token *lexer_collect_neq(Lexer *lexer);
 Token *lexer_collect_pexpr(Lexer *lexer);
+Token *lexer_collect_arrow(Lexer *lexer);
 Token* lexer_advance_with_token(Lexer* lexer, Token* token); //Returns token and also advances c
 
 #endif //GSCRIPT2_LEXER_H

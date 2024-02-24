@@ -40,8 +40,10 @@ AST* visitor_visit_listindx(Visitor *visitor, AST *node);
 AST *visitor_visit_compound(Visitor *visitor, AST *node, unsigned change_scope);
 AST *visitor_visit_obj_def(Visitor *visitor, AST *node);
 AST *visitor_visit_objaccess(Visitor *visitor, AST *node);
+AST *visitor_visit_list_arrow(Visitor *visitor, AST *node);
 AST *visitor_convert_to_str(Visitor *visitor, AST *node);
 AST *visitor_visit_obj_reassign(Visitor *visitor, AST *node);
+AST *visitor_visit_list_reassign(Visitor *visitor, AST *node);
 char *visitor_scope_to_objacc(Visitor *visitor, AST *node);
 AST *visitor_visit_import(Visitor *visitor, AST *node);
 

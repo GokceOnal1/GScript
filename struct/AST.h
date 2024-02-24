@@ -2,7 +2,7 @@
 #define GSCRIPT2_AST_H
 #include <stdlib.h>
 typedef struct AST_s {
-    enum { AST_VAR_DEF, AST_FUNC_DEF, AST_VAR, AST_FUNC_CALL, AST_STR, AST_COMPOUND, AST_NOOP, AST_NUM, AST_BINOP, AST_BOOL, AST_IF, AST_REPEAT, AST_OUT, AST_SKIP, AST_REASSIGN, AST_WHILE, AST_UNOP, AST_PARAM, AST_RETURN, AST_LIST, AST_LISTINDX, AST_OBJREF, AST_GROUP, AST_OBJ_DEF, AST_DOT, AST_OBJACCESS, AST_OBJ, AST_IMPORT, AST_OBJ_REASSIGN } type;
+    enum { AST_VAR_DEF, AST_FUNC_DEF, AST_VAR, AST_FUNC_CALL, AST_STR, AST_COMPOUND, AST_NOOP, AST_NUM, AST_BINOP, AST_BOOL, AST_IF, AST_REPEAT, AST_OUT, AST_SKIP, AST_REASSIGN, AST_WHILE, AST_UNOP, AST_PARAM, AST_RETURN, AST_LIST, AST_LISTINDX, AST_OBJREF, AST_GROUP, AST_OBJ_DEF, AST_DOT, AST_OBJACCESS, AST_OBJ, AST_IMPORT, AST_OBJ_REASSIGN, AST_LIST_ARROW, AST_LIST_REASSIGN } type;
     struct scope_s* scope;
     unsigned int line;
 
@@ -115,6 +115,13 @@ typedef struct AST_s {
     struct AST_s *obj_reassign_left;
     struct AST_s *obj_reassign_right;
 
+    //AST_LIST_ARROW
+    struct AST_s *list_arrow_left;
+    struct AST_s *list_arrow_right;
+
+    //AST_LIST_REASSIGN
+    struct AST_s *list_reassign_left;
+    struct AST_s *list_reassign_right;
 } AST;
 
 AST* ast_init(int type);

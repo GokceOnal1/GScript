@@ -48,5 +48,6 @@ AST *parser_parse_obj(Parser *parser, Scope *scope);
 AST *parser_parse_obj_access(Parser *parser, Scope *scope);
 AST *parser_parse_field_or_method(Parser *parser, Scope *scope);
 AST *parser_parse_import(Parser *parser, Scope *scope);
+AST *parser_parse_list_arrow(AST* initial, Parser *parser, Scope *scope);
 
 #endif //GSCRIPT2_PARSER_H
