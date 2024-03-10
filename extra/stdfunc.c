@@ -198,7 +198,9 @@ AST *std_func_listindx(Visitor *visitor, AST **argv, int argc, unsigned line) {
 AST *get_builtin_func(Visitor *visitor, AST *node) {
     int argc = node->func_call_args_size;
     AST ** argv = node->func_call_args;
+
     //printf(" %s %s", node->func_call_name, visitor->e->curr_file);
+    //-----MATH------
     if(strcmp(node->func_call_name, "__builtin_sin__") == 0 && strcmp(visitor->e->curr_file, "builtin_math.gs") == 0) {
         AST * ast = ast_init(AST_NUM);
         AST * v = visitor_visit(visitor, argv[0]);
@@ -231,5 +233,20 @@ AST *get_builtin_func(Visitor *visitor, AST *node) {
         AST *v2 = visitor_visit(visitor, argv[1]);
         ast->num_value = pow(v->num_value, v2->num_value);
         return ast;
+    //-----LISTS-----
+    } else if(strcmp(node->func_call_name, "__builtin_len__") == 0 && strcmp(visitor->e->curr_file, "builtin_list.gs") == 0) {
+        AST *ast = ast_init(AST_NUM);
+        AST *v = visitor_visit(visitor, argv[0]);
+        ast->num_value = v->list_size;
+        return ast;
+    } else if(strcmp(node->func_call_name, "__builtin_add__") == 0 && strcmp(visitor->e->curr_file, "builtin_list.gs") == 0) {
+       // printf("aris");
+        AST *list = visitor_visit(visitor, argv[0]);
+        AST *toadd = visitor_visit(visitor, argv[1]);
+        list->list_size++;
+        list->list_contents = realloc(list->list_contents, sizeof(AST*) * list->list_size);
+        list->list_contents[list->list_size-1] = toadd;
+
+        return list;
     } else return NULL;
 }

@@ -1,10 +1,4 @@
 # GScript (version 2)
-## Todo:
-Add support for reference parameters <br>
-Revamp list indexing <br>
-Standardize error system <br>
-Add classes <br>
-Add static typing <br>
 
 ## Error Codes:
 (may be outdated)

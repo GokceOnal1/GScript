@@ -194,24 +194,27 @@ AST *parser_parse_function_call(Parser *parser, Scope *scope) {
     function_call->line = parser->previous_token->line;
     function_call->func_call_name = parser->previous_token->value;
     parser_eat(parser, T_LPR);
-    function_call->func_call_args = calloc(1, sizeof(AST **));
+    if(parser->current_token->type != T_RPR) {
+        function_call->func_call_args = calloc(1, sizeof(AST **));
 
-    AST *ast_expr = parser_parse_comp_expr(parser, scope);
-    function_call->func_call_args[0] = ast_expr;
-    function_call->func_call_args_size++;
-
-    while (parser->current_token->type == T_COMMA) {
-        parser_eat(parser, T_COMMA);
-        AST *ast = parser_parse_comp_expr(parser, scope);
+        AST *ast_expr = parser_parse_comp_expr(parser, scope);
+        function_call->func_call_args[0] = ast_expr;
         function_call->func_call_args_size++;
-        AST** tmp = realloc(function_call->func_call_args,
-                            function_call->func_call_args_size * sizeof(AST *));
-        if(tmp) function_call->func_call_args = tmp; else {
-            _GSERR_s(parser->e, parser->current_token->line, errGSb02);
-            _terminate_gs(parser->e);
+
+        while (parser->current_token->type == T_COMMA) {
+            parser_eat(parser, T_COMMA);
+            AST *ast = parser_parse_comp_expr(parser, scope);
+            function_call->func_call_args_size++;
+            AST **tmp = realloc(function_call->func_call_args,
+                                function_call->func_call_args_size * sizeof(AST *));
+            if (tmp) function_call->func_call_args = tmp;
+            else {
+                _GSERR_s(parser->e, parser->current_token->line, errGSb02);
+                _terminate_gs(parser->e);
+            }
+            function_call->func_call_args[function_call->func_call_args_size - 1] =
+                    ast;
         }
-        function_call->func_call_args[function_call->func_call_args_size - 1] =
-                ast;
     }
     parser_eat(parser, T_RPR);
     function_call->scope = scope;

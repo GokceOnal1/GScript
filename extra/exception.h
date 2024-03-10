@@ -36,6 +36,7 @@
 #define errGS303 "GS.303 - Variable '%s' does not exist in the current scope"
 #define errGS304 "GS.304 - Expected 'field', 'method', or 'obj' for object definition"
 #define errGS305 "GS.305 - Expected number value to index list but received type '%s'"
+#define errGS306 "GS.306 - List index out of bounds (index %d on size %d)"
 #define errGS401 "GS.401 - Object '%s' already exists in the current scope"
 #define errGS402 "GS.402 - Object '%s' does not exist in the current scope"
 #define errGS403 "GS.403 - Member '%s' of object '%s' does not exist"

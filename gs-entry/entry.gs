@@ -1,6 +1,8 @@
 assign arr = ["Gokce", "Birce", "Burak", "Anil"];
-assign i = 0;
-while(i < 5) {
-    write(arr->i);
-    i = i + 1;
-};
+
+write("Before: ", arr);
+write(arr.size());
+
+arr.add("Someone else");
+write("After: ", arr);
+write(arr.size());

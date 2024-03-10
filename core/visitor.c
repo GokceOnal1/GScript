@@ -189,10 +189,13 @@ AST *visitor_visit_func_call(Visitor *visitor, AST *node, Scope *calledfrom) {
         return std_func_listindx(visitor, node->func_call_args, node->func_call_args_size, node->line);
     }
     AST* fdef = scope_get_function_definition(visitor->current_scope, node->func_call_name);
+
     if(fdef != NULL) {
-     //   printf("here");
         if(node->func_call_args_size != fdef->func_def_args_size) {
+            //printf("here name: %s, size: %d", node->func_call_name, node->func_call_args_size);
+           // printf(" %s  ", ast_str[node->func_call_args[0]->type]);
             _GSERR_s(visitor->e, node->line, errGS502, node->func_call_name, node->func_call_args_size);
+           // printf("\naris %s", ast_str[node->func_call_args[0]->type]);
             return ast_init(AST_NOOP);
         }
         Scope* prev = visitor->current_scope;
@@ -526,7 +529,6 @@ AST *visitor_visit_obj_def(Visitor *visitor, AST *node) {
     new_node = node;
     for(unsigned i = 0; i < new_node->fields_size; i++) {
      //  printf("type: %d", node->fields[i]->var_def_value->type);
-
         AST *toadd = ast_init(AST_VAR_DEF);
         toadd = visitor_visit_var_def(visitor, new_node->fields[i]);
        // toadd->var_def_value = visitor_visit(visitor, new_node->fields[i]->var_def_value);
@@ -573,6 +575,20 @@ AST *visitor_visit_objaccess(Visitor *visitor, AST *node) {
   //  printf(" visiting objacc ");
    AST *main_obj = node->objaccess_left;
    AST *v_main_obj = visitor_visit(visitor, main_obj);
+   //FOR SPECIALIZED LIST OBJECT
+   if(v_main_obj->type == AST_LIST) {
+       // printf(" size: %d", size);
+        AST *new_obj = ast_init(AST_OBJ);
+        new_obj->obj_objdef = scope_get_var_def(visitor->current_scope, "_LIST_")->obj_objdef;
+       // printf("%s", ast_str[v_main_obj->obj_objdef->type]);
+        AST* newdef = ast_init(AST_VAR_DEF);
+        newdef->var_def_var_name = "_list_";
+        newdef->var_def_value = v_main_obj;
+        scope_set_var(new_obj->obj_objdef->scope, newdef);
+        v_main_obj = new_obj;
+       // printf(" here ");
+   }
+
    if(v_main_obj->type == AST_OBJ) {
       // printf("here");
        AST *odef = v_main_obj->obj_objdef;
@@ -639,6 +655,10 @@ AST *visitor_visit_list_arrow(Visitor *visitor, AST *node) {
            // printf("at end: %s", ast_str[new_list_arrow->list_arrow_left->type]);
             return visitor_visit_list_arrow(visitor, new_list_arrow);
         } else if(right_side->type == AST_NUM){
+            if((unsigned int)right_side->num_value >= v_main_list->list_size) {
+                _GSERR_s(visitor->e, right_side->line, errGS306, (int)right_side->num_value, v_main_list->list_size);
+                return ast_init(AST_NOOP);
+            }
             return visitor_visit(visitor, v_main_list->list_contents[(unsigned int)right_side->num_value]);
         } else {
             _GSERR_s(visitor->e, right_side->line, errGS305, ast_str[right_side->type]);
@@ -689,6 +709,7 @@ AST *visitor_visit_list_reassign(Visitor *visitor, AST *node) {
                 _GSERR_s(visitor->e, f_index->line, errGS305, ast_str[f_index->type]);
                 return ast_init(AST_NOOP);
             }
+            printf("%f",f_index->num_value);
             curr->list_arrow_left->list_contents[(unsigned int)f_index->num_value] = newval;
             return ast_init(AST_NOOP);
         }
@@ -729,6 +750,7 @@ char *visitor_scope_to_objacc(Visitor *visitor, AST *node) {
                 return ast_init(AST_NOOP);
             }
         } else {
+            //make into actual error
             printf("illegal for obj reassignment");
         }
     }
