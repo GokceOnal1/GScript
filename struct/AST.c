@@ -1,7 +1,14 @@
 #include "AST.h"
+#include <errno.h>
+#include <stdio.h>
 AST *ast_init(int type) {
     AST *ast = calloc(1, sizeof(AST));
-
+    if(ast == NULL) {
+        if(errno == ENOMEM) {
+            printf(" No memory!! ");
+        }
+        return NULL;
+    }
     ast->type = type;
     ast->scope = NULL;
     ast->var_def_var_name = NULL;
@@ -61,5 +68,6 @@ AST *ast_init(int type) {
     ast->obj_reassign_left = NULL;
     ast->obj_reassign_right = NULL;
     ast->func_def_file = NULL;
+    ast->var_references = 0;
     return ast;
 }

@@ -27,4 +27,6 @@ add_executable(GScript2 main.c
         util/test.c
         util/test.h
         util/defs.h
+        util/management.c
+        util/management.h
 )

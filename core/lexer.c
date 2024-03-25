@@ -32,7 +32,6 @@ void lexer_skip_space(Lexer *lexer) {
 void lexer_skip_comments(Lexer *lexer) {
     lexer_advance(lexer);
     while (lexer->c != '$' && lexer->c != '\0') {
-        printf("here");
         lexer_advance(lexer);
     }
     lexer_advance(lexer);

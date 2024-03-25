@@ -1,8 +1,7 @@
-assign arr = ["Gokce", "Birce", "Burak", "Anil"];
-
-write("Before: ", arr);
-write(arr.size());
-
-arr.add("Someone else");
-write("After: ", arr);
-write(arr.size());
+assign a = 1;
+write("a init: ", a);
+assign b = a;
+write("b init: ", b);
+a = 2;
+write("a after: ", a);
+write("b after: ", b);

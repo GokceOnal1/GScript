@@ -2,6 +2,7 @@
 #define GSCRIPT2_SCOPE_H
 #include "../struct/AST.h"
 #include "../extra/exception.h"
+
 typedef struct scope_s {
     struct scope_s *parent;
     AST **func_defs;

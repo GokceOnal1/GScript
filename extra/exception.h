@@ -65,4 +65,5 @@ ErrorStack *errorstack_init();
 void _GSERR_s(ErrorStack *e, unsigned line, char *description, ...);
 void _print_err(ErrorStack *e);
 void _terminate_gs(ErrorStack *e);
+
 #endif //GSCRIPT2_EXCEPTION_H

@@ -115,7 +115,7 @@ AST *visitor_visit_var_def(Visitor *visitor, AST *node) {
     return def;
 }
 AST *visitor_visit_var_reassign(Visitor *visitor, AST *node) {
-    // printf("\n ENCOUNTERED REASSIGN with value type %d\n", node->var_def_value->type);
+   //  printf("\n ENCOUNTERED REASSIGN with value type %d\n", node->var_def_value->type);
     AST* val = visitor_visit(visitor, node->var_def_value);
     // printf("\nVisitng reassing node, value is %f", val->num_value);
     AST* newval = ast_init(AST_VAR_DEF);
@@ -529,14 +529,15 @@ AST *visitor_visit_obj_def(Visitor *visitor, AST *node) {
     new_node = node;
     for(unsigned i = 0; i < new_node->fields_size; i++) {
      //  printf("type: %d", node->fields[i]->var_def_value->type);
-        AST *toadd = ast_init(AST_VAR_DEF);
-        toadd = visitor_visit_var_def(visitor, new_node->fields[i]);
+       // AST *toadd = ast_init(AST_VAR_DEF);
+       // toadd = visitor_visit_var_def(visitor, new_node->fields[i]);
        // toadd->var_def_value = visitor_visit(visitor, new_node->fields[i]->var_def_value);
       //  printf(" num %d  ", node->fields[i]->var_def_value->type);
       //  toadd->var_def_var_name = new_node->fields[i]->var_def_var_name;
       //  new_node->fields[i] = toadd;
         visitor->current_scope = fieldscope;
-        scope_add_var_def(visitor->current_scope, toadd);
+       // scope_add_var_def(visitor->current_scope, toadd);
+        visitor_visit_var_def(visitor, new_node->fields[i]);
         visitor->current_scope = origin;
       //  printf("ok2");
     }
@@ -781,6 +782,8 @@ AST *visitor_visit_import(Visitor *visitor, AST *node) {
     AST* root = parser_parse(p, p->scope);
     visitor_visit_compound(visitor, root, 0);
     visitor->e->curr_file = origin;
+    free(p);
+    free(l);
     return ast_init(AST_NOOP);
 }
 AST *visitor_visit_compound(Visitor *visitor, AST *node, unsigned change_scope) {

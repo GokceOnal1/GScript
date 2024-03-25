@@ -1,7 +1,7 @@
 #include "scope.h"
 #include <stdio.h>
 #include <string.h>
-
+#include "../util/management.h"
 Scope *scope_init(Scope *parent, ErrorStack *errorstack) {//printf("making scope");
     Scope *scope = calloc(1, sizeof(Scope));
     scope->parent = parent;
@@ -24,8 +24,9 @@ AST *scope_add_function_definition(Scope *scope, AST *fdef) {
         scope->func_defs =
                 realloc(scope->func_defs, scope->func_defs_size * sizeof(AST*));
     }
-    scope->func_defs[scope->func_defs_size - 1] = fdef;
-    return fdef;
+    scope->func_defs[scope->func_defs_size - 1] = ast_init(0);
+    MEM_copy_ast(scope->func_defs[scope->func_defs_size - 1], fdef);
+    return NULL;
 }
 
 AST *scope_get_function_definition(Scope *scope, const char *fname) {
@@ -43,6 +44,7 @@ AST *scope_get_function_definition(Scope *scope, const char *fname) {
 }
 
 void scope_add_var_def(Scope *scope, AST *vdef) {
+   // printf("here with var name %s ", vdef->var_def_var_name);
     AST *existing = scope_get_var_def(scope, vdef->var_def_var_name);
 
     if (existing != NULL) {
@@ -57,7 +59,18 @@ void scope_add_var_def(Scope *scope, AST *vdef) {
         scope->var_defs =
                 realloc(scope->var_defs, scope->var_defs_size * sizeof(AST *));
     }
-    scope->var_defs[scope->var_defs_size - 1] = vdef;
+    scope->var_defs[scope->var_defs_size - 1] = ast_init(AST_VAR_DEF);
+
+   MEM_copy_ast(scope->var_defs[scope->var_defs_size - 1], vdef);
+   //MEM_free_ast(vdef);
+   //DO NOT DO ABOVE FUNCTION CALL
+   //BECAUSE IT FREES SAME MEMORY TWICE!!!
+   //(somehow)(i'm not sure why exactly)
+   //vdef->var_def_var_name = "chode";
+   //printf( " scoped: %s ", scope->var_defs[scope->var_defs_size - 1]->var_def_var_name);
+
+
+   // vdef->var_def_value->var_references++;
   // printf("added var");
 }
 
@@ -77,6 +90,7 @@ AST *scope_get_var_def(Scope *scope, const char *vname) {
 }
 
 void scope_set_var(Scope *scope, AST *newdef) {
+    //printf("setting var");
     while (scope != NULL) {
      //   printf("%d", scope->var_defs_size);
         for (int i = 0; i < scope->var_defs_size; i++) {
@@ -84,8 +98,19 @@ void scope_set_var(Scope *scope, AST *newdef) {
             AST *var_def = scope->var_defs[i];
             //printf("%s <-> %s\n", var_def->var_def_var_name, newdef->var_def_var_name);
             if (strcmp(var_def->var_def_var_name, newdef->var_def_var_name) == 0) {
-
-                scope->var_defs[i]->var_def_value = newdef->var_def_value;
+                //printf("here with %d ", scope->var_defs[i]->var_def_value->type);
+                //printf(" val: %d ", (scope->var_defs[i]->var_def_value->line));
+                //visualize_ast(scope->var_defs[i], 0);
+               // MEM_free_ast(scope->var_defs[i]->var_def_value);
+               // printf(" this is after freeing ");
+               // visualize_ast(scope->var_defs[i], 0);
+                MEM_free_ast(scope->var_defs[i]->var_def_value);
+                //printf("here");
+                //visualize_ast(scope->var_defs[i], 0);
+                //printf(" scope type: %d ", scope->var_defs[i]->type);
+                scope->var_defs[i]->var_def_value = ast_init(0);
+                MEM_copy_ast(scope->var_defs[i]->var_def_value, newdef->var_def_value);
+               // MEM_free_ast(newdef);
                 // printf("\nThe extern def: %f", newdef->var_def_value->num_value);
                 // printf("\nThe scoped def: %f",
                 // scope->var_defs[i]->var_def_value->num_value);
@@ -98,8 +123,8 @@ void scope_set_var(Scope *scope, AST *newdef) {
              newdef->var_def_var_name);
 }
 void scope_clear_defs(Scope* scope) {
-    scope->func_defs = NULL;
+    MEM_free_ast_arr(scope->func_defs, scope->func_defs_size);
     scope->func_defs_size = 0;
-    scope->var_defs = NULL;
+    MEM_free_ast_arr(scope->var_defs, scope->func_defs_size);
     scope->var_defs_size = 0;
 }

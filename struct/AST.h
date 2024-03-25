@@ -19,6 +19,7 @@ typedef struct AST_s {
 
     //AST_VAR
     char* var_name;
+    unsigned var_references;
 
     //AST_FUNC_CALL
     char* func_call_name;
